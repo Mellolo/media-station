@@ -1,0 +1,77 @@
+package bizTag
+
+import (
+	"fmt"
+	"github.com/beego/beego/v2/client/orm"
+	"github.com/mellolo/common/errors"
+	pkgErrors "github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"media-station/models/do/tagDO"
+	"media-station/models/dto/tagDTO"
+	"media-station/storage/db"
+)
+
+type TagBizService interface {
+	CreateOrUpdateTag(dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer)
+	RemoveArt(dto tagDTO.TagRemoveArtDTO, tx ...orm.TxOrmer)
+	DeleteTag(tagName string, tx ...orm.TxOrmer)
+}
+
+type TagBizServiceImpl struct {
+	tagMapper db.TagMapper
+}
+
+func NewTagBizService() *TagBizServiceImpl {
+	return &TagBizServiceImpl{
+		tagMapper: db.NewTagMapper(),
+	}
+}
+
+func (impl *TagBizServiceImpl) CreateOrUpdateTag(dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer) {
+	if dto.Name == "" {
+		panic(errors.NewError("tag name cannot be empty"))
+	}
+	tag, err := impl.tagMapper.SelectByName(dto.Name, tx...)
+	if err != nil && !pkgErrors.Is(err, orm.ErrNoRows) {
+		panic(errors.WrapError(err, "select tag failed"))
+	}
+	if pkgErrors.Is(err, orm.ErrNoRows) {
+		tag = &tagDO.TagDO{
+			Name:    dto.Name,
+			Creator: dto.Creator,
+		}
+	}
+
+	videoIds := sets.NewInt64(dto.Details.VideoIds...)
+	videoIds.Insert(dto.Details.VideoIds...)
+	tag.Details.VideoIds = videoIds.List()
+
+	galleryIds := sets.NewInt64(dto.Details.GalleryIds...)
+	galleryIds.Insert(dto.Details.GalleryIds...)
+	tag.Details.GalleryIds = galleryIds.List()
+
+	err = impl.tagMapper.InsertOrUpdate(tag, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("create or update tag [%s] failed", dto.Name)))
+	}
+}
+
+func (impl *TagBizServiceImpl) RemoveArt(dto tagDTO.TagRemoveArtDTO, tx ...orm.TxOrmer) {
+	tag, err := impl.tagMapper.SelectByName(dto.Name, tx...)
+	if err != nil && !pkgErrors.Is(err, orm.ErrNoRows) {
+		panic(errors.WrapError(err, "select tag failed"))
+	}
+	tag.Details.VideoIds = sets.NewInt64(tag.Details.VideoIds...).Delete(dto.Details.VideoIds...).List()
+	tag.Details.GalleryIds = sets.NewInt64(tag.Details.GalleryIds...).Delete(dto.Details.GalleryIds...).List()
+	err = impl.tagMapper.InsertOrUpdate(tag, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("remove artwork for tag [%s] failed", dto.Name)))
+	}
+}
+
+func (impl *TagBizServiceImpl) DeleteTag(tagName string, tx ...orm.TxOrmer) {
+	err := impl.tagMapper.DeleteByName(tagName, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("delete tag [%s] failed", tagName)))
+	}
+}
