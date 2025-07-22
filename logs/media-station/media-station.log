@@ -1,4 +1,0 @@
-2025/07/22 20:18:32.688  [I] [server.go:280]  http server Running on http://:8080
-2025/07/22 21:04:04.587  [I] [server.go:280]  http server Running on http://:8080
-2025/07/22 21:04:57.296  [D] [router.go:1306]  |            ::1|[97;43m 404 [0m|    678.875µs| nomatch|[97;46m POST    [0m /  
-2025/07/22 21:05:31.147  [D] [router.go:1306]  |            ::1|[97;43m 404 [0m|    180.875µs| nomatch|[97;46m POST    [0m /video
