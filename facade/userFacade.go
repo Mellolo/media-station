@@ -2,6 +2,8 @@ package facade
 
 import (
 	"github.com/beego/beego/v2/client/orm"
+	"github.com/beego/beego/v2/server/web"
+	"github.com/mellolo/common/utils/jsonUtil"
 	"media-station/service/biz/bizUser"
 	"media-station/storage/db"
 )
@@ -16,16 +18,26 @@ func NewUserFacade() *UserFacade {
 	}
 }
 
-func (impl *UserFacade) Register(username, password string) {
+func (impl *UserFacade) Register(c *web.Controller) {
+	body := struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}{}
+	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), body)
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		impl.userBizService.Register(username, password, tx)
+		impl.userBizService.Register(body.Username, body.Password, tx)
 	})
 }
 
-func (impl *UserFacade) Login(username, password string) string {
+func (impl *UserFacade) Login(c *web.Controller) string {
+	body := struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}{}
+	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), body)
 	var token string
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		token = impl.userBizService.Login(username, password, tx)
+		token = impl.userBizService.Login(body.Username, body.Password, tx)
 	})
 	return token
 }

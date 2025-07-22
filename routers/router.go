@@ -14,5 +14,10 @@ func init() {
 	namespaceVideo := beego.NewNamespace("/video",
 		beego.NSInclude(&controllers.VideoController{}),
 	)
-	beego.AddNamespace(namespaceGallery, namespaceVideo)
+
+	namespaceUser := beego.NewNamespace("/user",
+		beego.NSInclude(&controllers.UserController{}),
+	)
+
+	beego.AddNamespace(namespaceGallery, namespaceVideo, namespaceUser)
 }
