@@ -14,8 +14,8 @@ func init() {
 
 func TestUserMapperImpl_DeleteById(t *testing.T) {
 	type args struct {
-		id int64
-		tx []orm.TxOrmer
+		username string
+		tx       []orm.TxOrmer
 	}
 	tests := []struct {
 		name    string
@@ -25,7 +25,7 @@ func TestUserMapperImpl_DeleteById(t *testing.T) {
 		{
 			name: "case1",
 			args: args{
-				id: 1,
+				username: "test_user",
 			},
 			wantErr: false,
 		},
@@ -33,7 +33,7 @@ func TestUserMapperImpl_DeleteById(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			impl := &UserMapperImpl{}
-			if err := impl.DeleteById(tt.args.id, tt.args.tx...); (err != nil) != tt.wantErr {
+			if err := impl.DeleteByUsername(tt.args.username, tt.args.tx...); (err != nil) != tt.wantErr {
 				t.Errorf("DeleteById() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -80,8 +80,8 @@ func TestUserMapperImpl_Insert(t *testing.T) {
 
 func TestUserMapperImpl_SelectById(t *testing.T) {
 	type args struct {
-		id int64
-		tx []orm.TxOrmer
+		username string
+		tx       []orm.TxOrmer
 	}
 	tests := []struct {
 		name    string
@@ -92,11 +92,10 @@ func TestUserMapperImpl_SelectById(t *testing.T) {
 		{
 			name: "case1",
 			args: args{
-				id: 1,
-				tx: nil,
+				username: "test_user",
+				tx:       nil,
 			},
 			want: &userDO.UserDO{
-				Id:          1,
 				Username:    "test_user",
 				Password:    "password123",
 				PhoneNumber: "1234567890",
@@ -112,7 +111,7 @@ func TestUserMapperImpl_SelectById(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			impl := &UserMapperImpl{}
-			got, err := impl.SelectById(tt.args.id, tt.args.tx...)
+			got, err := impl.SelectByUsername(tt.args.username, tt.args.tx...)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SelectById() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -126,9 +125,9 @@ func TestUserMapperImpl_SelectById(t *testing.T) {
 
 func TestUserMapperImpl_Update(t *testing.T) {
 	type args struct {
-		id   int64
-		user *userDO.UserDO
-		tx   []orm.TxOrmer
+		username string
+		user     *userDO.UserDO
+		tx       []orm.TxOrmer
 	}
 	tests := []struct {
 		name    string
@@ -138,9 +137,8 @@ func TestUserMapperImpl_Update(t *testing.T) {
 		{
 			name: "case1",
 			args: args{
-				id: 1,
 				user: &userDO.UserDO{
-					Username:    "updated_user",
+					Username:    "test_user",
 					Password:    "new_password",
 					PhoneNumber: "0987654321",
 					WechatId:    "wechat456",
@@ -156,7 +154,7 @@ func TestUserMapperImpl_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			impl := &UserMapperImpl{}
-			if err := impl.Update(tt.args.id, tt.args.user, tt.args.tx...); (err != nil) != tt.wantErr {
+			if err := impl.Update(tt.args.user, tt.args.tx...); (err != nil) != tt.wantErr {
 				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

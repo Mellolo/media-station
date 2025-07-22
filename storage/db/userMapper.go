@@ -3,16 +3,15 @@ package db
 import (
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/mellolo/common/utils/jsonUtil"
-	"media-station/models/dao/daoCommon"
 	"media-station/models/dao/userDAO"
 	"media-station/models/do/userDO"
 )
 
 type UserMapper interface {
 	Insert(user *userDO.UserDO, tx ...orm.TxOrmer) (int64, error)
-	SelectById(id int64, tx ...orm.TxOrmer) (*userDO.UserDO, error)
-	Update(id int64, user *userDO.UserDO, tx ...orm.TxOrmer) error
-	DeleteById(id int64, tx ...orm.TxOrmer) error
+	SelectByUsername(username string, tx ...orm.TxOrmer) (*userDO.UserDO, error)
+	Update(user *userDO.UserDO, tx ...orm.TxOrmer) error
+	DeleteByUsername(username string, tx ...orm.TxOrmer) error
 }
 
 type UserMapperImpl struct{}
@@ -35,10 +34,10 @@ func (impl *UserMapperImpl) Insert(user *userDO.UserDO, tx ...orm.TxOrmer) (int6
 	return executor.Insert(&record)
 }
 
-func (impl *UserMapperImpl) SelectById(id int64, tx ...orm.TxOrmer) (*userDO.UserDO, error) {
+func (impl *UserMapperImpl) SelectByUsername(username string, tx ...orm.TxOrmer) (*userDO.UserDO, error) {
 	executor := getQueryExecutor(tx...)
-	record := userDAO.UserRecord{CommonColumn: daoCommon.CommonColumn{Id: id}}
-	err := executor.Read(&record)
+	var record userDAO.UserRecord
+	err := executor.QueryTable(userDAO.TableUser).Filter("username", username).One(&record)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +45,6 @@ func (impl *UserMapperImpl) SelectById(id int64, tx ...orm.TxOrmer) (*userDO.Use
 	var userDetails userDO.UserDetails
 	jsonUtil.UnmarshalJsonString(record.Details, &userDetails)
 	do := &userDO.UserDO{
-		Id:          record.Id,
 		Username:    record.Username,
 		Password:    record.Password,
 		PhoneNumber: record.PhoneNumber,
@@ -56,26 +54,20 @@ func (impl *UserMapperImpl) SelectById(id int64, tx ...orm.TxOrmer) (*userDO.Use
 	return do, nil
 }
 
-func (impl *UserMapperImpl) Update(id int64, user *userDO.UserDO, tx ...orm.TxOrmer) error {
+func (impl *UserMapperImpl) Update(user *userDO.UserDO, tx ...orm.TxOrmer) error {
 	executor := getQueryExecutor(tx...)
 
-	record := userDAO.UserRecord{
-		CommonColumn: daoCommon.CommonColumn{
-			Id: id,
-		},
-		Username:    user.Username,
-		Password:    user.Password,
-		PhoneNumber: user.PhoneNumber,
-		WechatId:    user.WechatId,
-		Details:     jsonUtil.GetJsonString(user.Details),
-	}
-	_, err := executor.Update(&record)
+	_, err := executor.QueryTable(userDAO.TableUser).Filter("username", user.Username).Update(orm.Params{
+		"password":     user.Password,
+		"phone_number": user.PhoneNumber,
+		"wechat_id":    user.WechatId,
+		"details":      jsonUtil.GetJsonString(user.Details),
+	})
 	return err
 }
 
-func (impl *UserMapperImpl) DeleteById(id int64, tx ...orm.TxOrmer) error {
+func (impl *UserMapperImpl) DeleteByUsername(username string, tx ...orm.TxOrmer) error {
 	executor := getQueryExecutor(tx...)
-	record := &userDAO.UserRecord{CommonColumn: daoCommon.CommonColumn{Id: id}}
-	_, err := executor.Delete(record)
+	_, err := executor.QueryTable(userDAO.TableUser).Filter("username", username).Delete()
 	return err
 }

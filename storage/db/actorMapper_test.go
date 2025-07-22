@@ -60,7 +60,7 @@ func TestActorMapperImpl_Insert(t *testing.T) {
 					CoverUrl:    "a",
 					Details: actorDO.ActorDetailsDO{
 						VideoIds:   nil,
-						GalleryIds: []int{1},
+						GalleryIds: []int64{1},
 					},
 				},
 				tx: nil,
@@ -105,7 +105,7 @@ func TestActorMapperImpl_SelectById(t *testing.T) {
 				CoverUrl:    "a",
 				Details: actorDO.ActorDetailsDO{
 					VideoIds:   nil,
-					GalleryIds: []int{1},
+					GalleryIds: []int64{1},
 				},
 			},
 			wantErr: false,

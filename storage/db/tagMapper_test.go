@@ -62,8 +62,8 @@ func TestTagMapperImpl_SelectById(t *testing.T) {
 				Name:    "c",
 				Creator: "coc",
 				Details: tagDO.TagDetails{
-					VideoIds:   []int{2},
-					GalleryIds: []int{2},
+					VideoIds:   []int64{2},
+					GalleryIds: []int64{2},
 				},
 			},
 			wantErr: false,
@@ -103,8 +103,8 @@ func TestTagMapperImpl_InsertOrUpdate(t *testing.T) {
 					Name:    "b",
 					Creator: "bob",
 					Details: tagDO.TagDetails{
-						VideoIds:   []int{2},
-						GalleryIds: []int{2},
+						VideoIds:   []int64{2},
+						GalleryIds: []int64{2},
 					},
 				},
 			},
@@ -117,8 +117,8 @@ func TestTagMapperImpl_InsertOrUpdate(t *testing.T) {
 					Name:    "c",
 					Creator: "coc",
 					Details: tagDO.TagDetails{
-						VideoIds:   []int{2},
-						GalleryIds: []int{2},
+						VideoIds:   []int64{2},
+						GalleryIds: []int64{2},
 					},
 				},
 			},
