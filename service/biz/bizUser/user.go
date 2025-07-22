@@ -13,7 +13,7 @@ import (
 
 type UserBizService interface {
 	Register(username, password string, tx ...orm.TxOrmer)
-	Login(username, password string) string
+	Login(username, password string, tx ...orm.TxOrmer) string
 	Logout(token string)
 }
 
@@ -37,8 +37,8 @@ func (impl UserBizServiceImpl) Register(username, password string, tx ...orm.TxO
 	}
 }
 
-func (impl UserBizServiceImpl) Login(username, password string) string {
-	userDo, err := impl.userMapper.SelectByUsername(username)
+func (impl UserBizServiceImpl) Login(username, password string, tx ...orm.TxOrmer) string {
+	userDo, err := impl.userMapper.SelectByUsername(username, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, "user login failed"))
 	}
