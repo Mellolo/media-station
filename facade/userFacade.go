@@ -43,31 +43,31 @@ func (impl *UserFacade) Login(c *web.Controller) string {
 	return token
 }
 
-func (impl *UserFacade) LoginStatus(c *web.Controller) (userVO.UserProfileVO, bool) {
+func (impl *UserFacade) LoginStatus(c *web.Controller) (userVO.UserStatusProfileVO, bool) {
 	tokenStr := c.Ctx.Request.Header.Get("Authorization")
 	if tokenStr == "" {
-		return userVO.UserProfileVO{}, false
+		return userVO.UserStatusProfileVO{}, false
 	}
 
 	client, _ := cache.GetCache()
 	data, _ := client.Get("userTokenBacklist")
 	if blacklist, ok := data.([]string); ok {
 		if sets.NewString(blacklist...).Has(tokenStr) {
-			return userVO.UserProfileVO{}, false
+			return userVO.UserStatusProfileVO{}, false
 		}
 	}
 
 	secretKey := config.GetConfig("media", "secretKey", "user")
 	claim, err := jwtUtil.ParseToken(tokenStr, secretKey)
 	if err != nil {
-		return userVO.UserProfileVO{}, false
+		return userVO.UserStatusProfileVO{}, false
 	}
 
 	var userClaim userDTO.UserClaimDTO
 	jsonUtil.UnmarshalJsonString(claim, &userClaim)
 	username := userClaim.Username
 
-	return userVO.UserProfileVO{
+	return userVO.UserStatusProfileVO{
 		Username: username,
 	}, true
 }
