@@ -43,7 +43,25 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"],
+	beego.GlobalControllerRouter["media-station/controllers:UserAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:UserAuthController"],
+		beego.ControllerComments{
+			Method:           "Logout",
+			Router:           `logout`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["media-station/controllers:UserAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:UserAuthController"],
+		beego.ControllerComments{
+			Method:           "Profile",
+			Router:           `profile`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["media-station/controllers:UserController"] = append(beego.GlobalControllerRouter["media-station/controllers:UserController"],
 		beego.ControllerComments{
 			Method:           "Login",
 			Router:           `login`,
@@ -52,7 +70,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"],
+	beego.GlobalControllerRouter["media-station/controllers:UserController"] = append(beego.GlobalControllerRouter["media-station/controllers:UserController"],
 		beego.ControllerComments{
 			Method:           "LoginStatus",
 			Router:           `login/status`,
@@ -63,26 +81,8 @@ func init() {
 
 	beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"],
 		beego.ControllerComments{
-			Method:           "Logout",
-			Router:           `logout`,
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"],
-		beego.ControllerComments{
 			Method:           "Play",
 			Router:           `play/:id`,
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"],
-		beego.ControllerComments{
-			Method:           "Profile",
-			Router:           `profile`,
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,

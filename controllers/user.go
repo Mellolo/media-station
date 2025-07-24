@@ -11,7 +11,7 @@ type UserController struct {
 }
 
 // @router login [post]
-func (c *VideoAuthController) Login() {
+func (c *UserController) Login() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
 		token := facade.NewUserFacade().Login(&c.Controller)
 		return templates.NewJsonTemplate200(token)
@@ -19,7 +19,7 @@ func (c *VideoAuthController) Login() {
 }
 
 // @router login/status [get]
-func (c *VideoAuthController) LoginStatus() {
+func (c *UserController) LoginStatus() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
 		profile, loggedIn := facade.NewUserFacade().LoginStatus(&c.Controller)
 		return templates.NewJsonTemplate200(map[string]interface{}{
@@ -34,7 +34,7 @@ type UserAuthController struct {
 }
 
 // @router profile [get]
-func (c *VideoAuthController) Profile() {
+func (c *UserAuthController) Profile() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
 		profile := facade.NewUserFacade().GetProfile(&c.Controller)
 		return templates.NewJsonTemplate200(profile)
@@ -42,7 +42,7 @@ func (c *VideoAuthController) Profile() {
 }
 
 // @router logout [get]
-func (c *VideoAuthController) Logout() {
+func (c *UserAuthController) Logout() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
 		tokenStr := c.Ctx.Request.Header.Get("Authorization")
 		facade.NewUserFacade().Logout(tokenStr)

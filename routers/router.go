@@ -26,7 +26,7 @@ func init() {
 	)
 
 	namespaceUser := beego.NewNamespace("/user",
-		beego.NSInclude(&controllers.UserAuthController{}),
+		beego.NSInclude(&controllers.UserController{}),
 	)
 
 	namespaceUserAuth := beego.NewNamespace("/userAuth",
