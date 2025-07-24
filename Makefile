@@ -30,7 +30,7 @@ generate-deepcopy:
 	@# 显示生成的文件
 	@echo "Generated files:"
 	find . -type f -name "*zz_generated.deepcopy.go" | sort
-	#-not -path "./network_planning/*" | sort
+	@#-not -path "./xxx/*" | sort
 
 clean-deepcopy:
 	@# 清除自动生成的deepcopy

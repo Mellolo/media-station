@@ -1,11 +1,10 @@
 package actorDO
 
-import "github.com/beego/beego/v2/client/orm"
-
+// +k8s:deepcopy-gen=true
 // ActorDO 表示演员的数据对象
 type ActorDO struct {
 	Id          int64
-	CreateAt    orm.DateTimeField
+	CreateAt    string
 	Name        string
 	Description string
 	Creator     string
@@ -13,6 +12,7 @@ type ActorDO struct {
 	Details     ActorDetailsDO
 }
 
+// +k8s:deepcopy-gen=true
 type ActorDetailsDO struct {
 	VideoIds   []int64 `json:"videoIds,omitempty"`
 	GalleryIds []int64 `json:"galleryIds,omitempty"`

@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// +k8s:deepcopy-gen=true
 type GalleryCreateDTO struct {
 	Name            string   `json:"name"`
 	Description     string   `json:"description"`
@@ -14,6 +15,7 @@ type GalleryCreateDTO struct {
 	PermissionLevel string   `json:"permissionLevel"`
 }
 
+// +k8s:deepcopy-gen=true
 type GalleryUpdateDTO struct {
 	Id              int      `json:"id"`
 	Name            string   `json:"name"`
@@ -24,12 +26,14 @@ type GalleryUpdateDTO struct {
 	PermissionLevel string   `json:"permissionLevel"`
 }
 
+// +k8s:deepcopy-gen=true
 type GallerySearchDTO struct {
 	Keyword string   `json:"keyword"`
 	Actors  []int64  `json:"actors"`
 	Tags    []string `json:"tags"`
 }
 
+// +k8s:deepcopy-gen=true
 type GalleryItemDTO struct {
 	Id              int64  `json:"id"`
 	Name            string `json:"name"`
@@ -37,6 +41,7 @@ type GalleryItemDTO struct {
 	PermissionLevel string `json:"permissionLevel"`
 }
 
+// +k8s:deepcopy-gen=true
 type GalleryPageDTO struct {
 	Id              int64    `json:"id"`
 	Name            string   `json:"name"`

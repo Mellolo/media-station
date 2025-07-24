@@ -54,7 +54,7 @@ func (impl *VideoMapperImpl) SelectById(id int64, tx ...orm.TxOrmer) (*videoDO.V
 	jsonUtil.UnmarshalJsonString(record.Tags, &tags)
 	do := &videoDO.VideoDO{
 		Id:              record.Id,
-		CreateAt:        record.CreatedAt,
+		CreateAt:        record.CreatedAt.String(),
 		Name:            record.Name,
 		Description:     record.Description,
 		Actors:          actors,
@@ -84,7 +84,7 @@ func (impl *VideoMapperImpl) SelectAllLimit(limit int, tx ...orm.TxOrmer) ([]*vi
 		jsonUtil.UnmarshalJsonString(record.Tags, &tags)
 		do := &videoDO.VideoDO{
 			Id:              record.Id,
-			CreateAt:        record.CreatedAt,
+			CreateAt:        record.CreatedAt.String(),
 			Name:            record.Name,
 			Description:     record.Description,
 			Actors:          actors,
@@ -117,7 +117,7 @@ func (impl *VideoMapperImpl) SelectByKeyword(keyword string, tx ...orm.TxOrmer) 
 		jsonUtil.UnmarshalJsonString(record.Tags, &tags)
 		do := &videoDO.VideoDO{
 			Id:              record.Id,
-			CreateAt:        record.CreatedAt,
+			CreateAt:        record.CreatedAt.String(),
 			Name:            record.Name,
 			Description:     record.Description,
 			Actors:          actors,

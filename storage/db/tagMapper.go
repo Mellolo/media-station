@@ -31,7 +31,7 @@ func (impl *TagMapperImpl) SelectByName(name string, tx ...orm.TxOrmer) (*tagDO.
 	jsonUtil.UnmarshalJsonString(record.Details, &tagDetails)
 	do := &tagDO.TagDO{
 		Id:       record.Id,
-		CreateAt: record.CreatedAt,
+		CreateAt: record.CreatedAt.String(),
 		Name:     record.Name,
 		Creator:  record.Creator,
 		Details:  tagDetails,

@@ -48,7 +48,7 @@ func (impl *ActorMapperImpl) SelectById(id int64, tx ...orm.TxOrmer) (*actorDO.A
 	jsonUtil.UnmarshalJsonString(record.Details, &actorDetails)
 	do := &actorDO.ActorDO{
 		Id:          record.Id,
-		CreateAt:    record.CreatedAt,
+		CreateAt:    record.CreatedAt.String(),
 		Name:        record.Name,
 		Description: record.Description,
 		Creator:     record.Creator,

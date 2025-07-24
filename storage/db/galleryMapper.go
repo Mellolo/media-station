@@ -58,7 +58,7 @@ func (impl *GalleryMapperImpl) SelectAllLimit(limit int, tx ...orm.TxOrmer) ([]*
 		jsonUtil.UnmarshalJsonString(record.Tags, &tags)
 		do := &galleryDO.GalleryDO{
 			Id:              record.Id,
-			CreateAt:        record.CreatedAt,
+			CreateAt:        record.CreatedAt.String(),
 			Name:            record.Name,
 			Description:     record.Description,
 			PageCount:       record.PageCount,
@@ -92,7 +92,7 @@ func (impl *GalleryMapperImpl) SelectByKeyword(keyword string, tx ...orm.TxOrmer
 		jsonUtil.UnmarshalJsonString(record.Tags, &tags)
 		do := &galleryDO.GalleryDO{
 			Id:              record.Id,
-			CreateAt:        record.CreatedAt,
+			CreateAt:        record.CreatedAt.String(),
 			Name:            record.Name,
 			Description:     record.Description,
 			PageCount:       record.PageCount,
@@ -122,7 +122,7 @@ func (impl *GalleryMapperImpl) SelectById(id int64, tx ...orm.TxOrmer) (*gallery
 	jsonUtil.UnmarshalJsonString(record.Tags, &tags)
 	do := &galleryDO.GalleryDO{
 		Id:              record.Id,
-		CreateAt:        record.CreatedAt,
+		CreateAt:        record.CreatedAt.String(),
 		Name:            record.Name,
 		Description:     record.Description,
 		PageCount:       record.PageCount,

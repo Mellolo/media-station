@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// +k8s:deepcopy-gen=true
 type VideoCreateDTO struct {
 	Name            string   `json:"name"`
 	Description     string   `json:"description"`
@@ -14,6 +15,7 @@ type VideoCreateDTO struct {
 	PermissionLevel string   `json:"permissionLevel"`
 }
 
+// +k8s:deepcopy-gen=true
 type VideoUpdateDTO struct {
 	Id              int64    `json:"id"`
 	Name            string   `json:"name"`
@@ -23,12 +25,14 @@ type VideoUpdateDTO struct {
 	PermissionLevel string   `json:"permissionLevel"`
 }
 
+// +k8s:deepcopy-gen=true
 type VideoSearchDTO struct {
 	Keyword string   `json:"keyword"`
 	Actors  []int64  `json:"actors"`
 	Tags    []string `json:"tags"`
 }
 
+// +k8s:deepcopy-gen=true
 type VideoItemDTO struct {
 	Id              int64  `json:"id"`
 	Name            string `json:"name"`
@@ -36,6 +40,7 @@ type VideoItemDTO struct {
 	PermissionLevel string `json:"permissionLevel"`
 }
 
+// +k8s:deepcopy-gen=true
 type VideoPageDTO struct {
 	Id              int64    `json:"id"`
 	Name            string   `json:"name"`

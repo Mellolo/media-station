@@ -1,15 +1,15 @@
 package galleryDO
 
 import (
-	"github.com/beego/beego/v2/client/orm"
 	"io"
 	"net/http"
 )
 
+// +k8s:deepcopy-gen=true
 // GalleryDO 表示画廊的数据对象
 type GalleryDO struct {
 	Id              int64
-	CreateAt        orm.DateTimeField
+	CreateAt        string
 	Name            string
 	Description     string
 	PageCount       int

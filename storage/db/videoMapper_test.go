@@ -156,7 +156,7 @@ func TestVideoMapperImpl_SelectById(t *testing.T) {
 				t.Errorf("SelectById() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			got.CreateAt = orm.DateTimeField{}
+			got.CreateAt = ""
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("SelectById() got = %v, want %v", got, tt.want)
 			}

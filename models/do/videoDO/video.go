@@ -1,14 +1,14 @@
 package videoDO
 
 import (
-	"github.com/beego/beego/v2/client/orm"
 	"io"
 	"net/http"
 )
 
+// +k8s:deepcopy-gen=true
 type VideoDO struct {
 	Id              int64
-	CreateAt        orm.DateTimeField
+	CreateAt        string
 	Name            string
 	Description     string
 	Actors          []int64

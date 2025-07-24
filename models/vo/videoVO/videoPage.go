@@ -1,5 +1,6 @@
 package videoVO
 
+// +k8s:deepcopy-gen=true
 type VideoPageVO struct {
 	Id              int64  `json:"id"`
 	Name            string `json:"name"`
