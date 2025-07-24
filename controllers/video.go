@@ -23,6 +23,14 @@ func (c *VideoController) SearchVideo() {
 	})
 }
 
+// @router page/:id [get]
+func (c *VideoController) Page() {
+	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
+		vo := facade.NewVideoFacade().GetVideoPage(&c.Controller)
+		return templates.NewJsonTemplate200(vo)
+	})
+}
+
 type VideoAuthController struct {
 	web.Controller
 }
@@ -71,7 +79,7 @@ func (c *VideoAuthController) Upload() {
 	})
 }
 
-// @router :id [get]
+// @router play/:id [get]
 func (c *VideoAuthController) Play() {
 	templates.ServeVideoTemplate(c.Ctx, func() templates.VideoTemplate {
 		vo := facade.NewVideoFacade().PlayVideo(&c.Controller)

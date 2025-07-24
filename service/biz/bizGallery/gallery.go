@@ -20,6 +20,7 @@ const (
 )
 
 type GalleryBizService interface {
+	GetGalleryPage(id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO
 	SearchGallery(createDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO
 	CreateGallery(createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
 	UpdateGallery(id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer)
@@ -41,6 +42,24 @@ type GalleryBizServiceImpl struct {
 	galleryMapper  db.GalleryMapper
 	idGenerator    generator.IdGenerator
 	pictureStorage oss.PictureStorage
+}
+
+func (impl *GalleryBizServiceImpl) GetGalleryPage(id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO {
+	gallery, err := impl.galleryMapper.SelectById(id, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("get gallery [%d] failed", id)))
+	}
+	return galleryDTO.GalleryPageDTO{
+		Id:              gallery.Id,
+		Name:            gallery.Name,
+		Description:     gallery.Description,
+		Actors:          gallery.Actors,
+		Tags:            gallery.Tags,
+		Uploader:        gallery.Uploader,
+		CoverUrl:        gallery.CoverUrl,
+		GalleryUrl:      gallery.GalleryUrl,
+		PermissionLevel: gallery.PermissionLevel,
+	}
 }
 
 func (impl *GalleryBizServiceImpl) SearchGallery(createDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO {

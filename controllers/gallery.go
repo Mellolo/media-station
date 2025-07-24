@@ -25,6 +25,14 @@ func (c *GalleryController) SearchGallery() {
 	})
 }
 
+// @router page/:id [get]
+func (c *GalleryController) Page() {
+	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
+		vo := facade.NewGalleryFacade().GetGalleryPage(&c.Controller)
+		return templates.NewJsonTemplate200(vo)
+	})
+}
+
 type GalleryAuthController struct {
 	web.Controller
 }

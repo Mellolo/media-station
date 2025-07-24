@@ -21,6 +21,7 @@ const (
 )
 
 type VideoBizService interface {
+	GetVideoPage(id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
 	SearchVideo(createDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
 	CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO, coverDTO fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
 	UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) string
@@ -45,6 +46,24 @@ type VideoBizServiceImpl struct {
 	idGenerator    generator.IdGenerator
 	pictureStorage oss.PictureStorage
 	videoStorage   oss.VideoStorage
+}
+
+func (impl *VideoBizServiceImpl) GetVideoPage(id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO {
+	video, err := impl.videoMapper.SelectById(id, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("get video [%d] failed", id)))
+	}
+	return videoDTO.VideoPageDTO{
+		Id:              video.Id,
+		Name:            video.Name,
+		Description:     video.Description,
+		Actors:          video.Actors,
+		Tags:            video.Tags,
+		Uploader:        video.Uploader,
+		CoverUrl:        video.CoverUrl,
+		VideoUrl:        video.VideoUrl,
+		PermissionLevel: video.PermissionLevel,
+	}
 }
 
 func (impl *VideoBizServiceImpl) SearchVideo(createDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {

@@ -64,6 +64,29 @@ func (impl *GalleryFacade) SearchGallery(c *web.Controller) []galleryVO.GalleryI
 	return voList
 }
 
+func (impl *GalleryFacade) GetGalleryPage(c *web.Controller) galleryVO.GalleryPageVO {
+	// id
+	idStr := c.Ctx.Input.Param(":id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		panic(errors.WrapError(err, "get videoId failed"))
+	}
+
+	var vo galleryVO.GalleryPageVO
+	db.DoTransaction(func(tx orm.TxOrmer) {
+		page := impl.galleryBizService.GetGalleryPage(id, tx)
+		vo = galleryVO.GalleryPageVO{
+			Id:              page.Id,
+			Name:            page.Name,
+			Description:     page.Description,
+			CoverUrl:        page.CoverUrl,
+			PermissionLevel: page.PermissionLevel,
+		}
+	})
+
+	return vo
+}
+
 func (impl *GalleryFacade) UploadGallery(c *web.Controller, ch chan string) {
 	// 名称
 	name := c.GetString("name", "")

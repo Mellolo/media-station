@@ -65,6 +65,29 @@ func (impl *VideoFacade) SearchVideo(c *web.Controller) []videoVO.VideoItemVO {
 	return voList
 }
 
+func (impl *VideoFacade) GetVideoPage(c *web.Controller) videoVO.VideoPageVO {
+	// id
+	idStr := c.Ctx.Input.Param(":id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		panic(errors.WrapError(err, "get videoId failed"))
+	}
+
+	var vo videoVO.VideoPageVO
+	db.DoTransaction(func(tx orm.TxOrmer) {
+		page := impl.videoBizService.GetVideoPage(id, tx)
+		vo = videoVO.VideoPageVO{
+			Id:              page.Id,
+			Name:            page.Name,
+			Description:     page.Description,
+			PermissionLevel: page.PermissionLevel,
+			CoverUrl:        page.CoverUrl,
+		}
+	})
+
+	return vo
+}
+
 func (impl *VideoFacade) UploadVideo(c *web.Controller, ch chan string) {
 	// 名称
 	name := c.GetString("name", "")
