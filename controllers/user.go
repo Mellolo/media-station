@@ -21,10 +21,10 @@ func (c *VideoAuthController) Login() {
 // @router login/status [get]
 func (c *VideoAuthController) LoginStatus() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
-		profile, isLogin := facade.NewUserFacade().LoginStatus(&c.Controller)
+		profile, loggedIn := facade.NewUserFacade().LoginStatus(&c.Controller)
 		return templates.NewJsonTemplate200(map[string]interface{}{
-			"isLogin": isLogin,
-			"profile": profile,
+			"loggedIn": loggedIn,
+			"profile":  profile,
 		})
 	})
 }
