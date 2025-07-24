@@ -5,6 +5,7 @@ import (
 	"github.com/mellolo/common/cache"
 	"github.com/mellolo/common/config"
 	"github.com/mellolo/common/errors"
+	"github.com/mellolo/common/utils/jsonUtil"
 	"github.com/mellolo/common/utils/jwtUtil"
 	"media-station/models/do/userDO"
 	"media-station/models/dto/userDTO"
@@ -64,7 +65,9 @@ func (impl UserBizServiceImpl) Login(userLoginDTO userDTO.UserLoginDTO, tx ...or
 
 	secretKey := config.GetConfig("media", "secretKey", "user")
 
-	token, err := jwtUtil.GenerateToken(userDo.Username, secretKey, 1)
+	token, err := jwtUtil.GenerateToken(
+		jsonUtil.GetJsonString(userDTO.UserClaimDTO{Username: userDo.Username}),
+		secretKey, 1)
 	if err != nil {
 		panic(errors.WrapError(err, "generate token failed"))
 	}
