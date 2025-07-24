@@ -4,6 +4,7 @@ import (
 	"github.com/beego/beego/v2/server/web"
 	"media-station/controllers/templates"
 	"media-station/facade"
+	"media-station/models/vo/userVO"
 )
 
 type UserController struct {
@@ -22,9 +23,13 @@ func (c *UserController) Login() {
 func (c *UserController) LoginStatus() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
 		profile, loggedIn := facade.NewUserFacade().LoginStatus(&c.Controller)
-		return templates.NewJsonTemplate200(map[string]interface{}{
-			"loggedIn": loggedIn,
-			"profile":  profile,
+		type _vo struct {
+			LoggedIn                   bool `json:"loggedIn"`
+			userVO.UserStatusProfileVO `json:",inline"`
+		}
+		return templates.NewJsonTemplate200(_vo{
+			LoggedIn:            loggedIn,
+			UserStatusProfileVO: profile,
 		})
 	})
 }
