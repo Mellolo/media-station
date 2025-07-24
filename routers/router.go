@@ -8,15 +8,15 @@ import (
 func init() {
 	namespaceGallery := beego.NewNamespace("/gallery",
 		//beego.NSBefore(filters.JWTAuth),
-		beego.NSInclude(&controllers.GalleryController{}),
+		beego.NSInclude(&controllers.GalleryAuthController{}),
 	)
 
 	namespaceVideo := beego.NewNamespace("/video",
-		beego.NSInclude(&controllers.VideoController{}),
+		beego.NSInclude(&controllers.VideoAuthController{}),
 	)
 
 	namespaceUser := beego.NewNamespace("/user",
-		beego.NSInclude(&controllers.UserController{}),
+		beego.NSInclude(&controllers.UserAuthController{}),
 	)
 
 	beego.AddNamespace(namespaceGallery, namespaceVideo, namespaceUser)

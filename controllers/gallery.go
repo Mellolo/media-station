@@ -18,15 +18,19 @@ type GalleryController struct {
 }
 
 // @router search [get]
-func (c *VideoController) SearchGallery() {
+func (c *GalleryController) SearchGallery() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
 		voList := facade.NewGalleryFacade().SearchGallery(&c.Controller)
 		return templates.NewJsonTemplate200(voList)
 	})
 }
 
+type GalleryAuthController struct {
+	web.Controller
+}
+
 // @router upload [post]
-func (c *GalleryController) Upload() {
+func (c *GalleryAuthController) Upload() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
 		upgrader := websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
@@ -70,7 +74,7 @@ func (c *GalleryController) Upload() {
 }
 
 // @router :id/:page [get]
-func (c *GalleryController) Picture() {
+func (c *GalleryAuthController) Picture() {
 	templates.ServePictureTemplate(c.Ctx, func() templates.PictureTemplate {
 
 		vo := facade.NewGalleryFacade().ShowPage(&c.Controller)

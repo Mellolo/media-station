@@ -23,8 +23,12 @@ func (c *VideoController) SearchVideo() {
 	})
 }
 
+type VideoAuthController struct {
+	web.Controller
+}
+
 // @router upload [post]
-func (c *VideoController) Upload() {
+func (c *VideoAuthController) Upload() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
 		//upgrader := websocket.Upgrader{
 		//	CheckOrigin: func(r *http.Request) bool {
@@ -68,7 +72,7 @@ func (c *VideoController) Upload() {
 }
 
 // @router :id [get]
-func (c *VideoController) Play() {
+func (c *VideoAuthController) Play() {
 	templates.ServeVideoTemplate(c.Ctx, func() templates.VideoTemplate {
 		vo := facade.NewVideoFacade().PlayVideo(&c.Controller)
 		return templates.VideoTemplate{
