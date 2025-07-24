@@ -27,7 +27,7 @@ func NewUserFacade() *UserFacade {
 
 func (impl *UserFacade) Register(c *web.Controller) {
 	var dto userDTO.UserRegisterDTO
-	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), dto)
+	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), &dto)
 	db.DoTransaction(func(tx orm.TxOrmer) {
 		impl.userBizService.Register(dto, tx)
 	})
@@ -35,7 +35,7 @@ func (impl *UserFacade) Register(c *web.Controller) {
 
 func (impl *UserFacade) Login(c *web.Controller) string {
 	var dto userDTO.UserLoginDTO
-	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), dto)
+	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), &dto)
 	var token string
 	db.DoTransaction(func(tx orm.TxOrmer) {
 		token = impl.userBizService.Login(dto, tx)

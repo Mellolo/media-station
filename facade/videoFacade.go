@@ -35,22 +35,12 @@ func NewVideoFacade() *VideoFacade {
 }
 
 func (impl *VideoFacade) SearchVideo(c *web.Controller) []videoVO.VideoItemVO {
-	// 名称
-	keyword := c.GetString("keyword", "")
-	// 演员
-	var actors []int64
-	jsonUtil.UnmarshalJsonString(c.GetString("actors", "[]"), &actors)
-	// tag
-	var tags []string
-	jsonUtil.UnmarshalJsonString(c.GetString("tags", "[]"), &tags)
+	var dto videoDTO.VideoSearchDTO
+	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), &dto)
 
 	var voList []videoVO.VideoItemVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		items := impl.videoBizService.SearchVideo(videoDTO.VideoSearchDTO{
-			Keyword: keyword,
-			Actors:  actors,
-			Tags:    tags,
-		}, tx)
+		items := impl.videoBizService.SearchVideo(dto, tx)
 
 		for _, item := range items {
 			voList = append(voList, videoVO.VideoItemVO{

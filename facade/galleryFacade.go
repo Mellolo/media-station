@@ -35,21 +35,12 @@ func NewGalleryFacade() *GalleryFacade {
 }
 
 func (impl *GalleryFacade) SearchGallery(c *web.Controller) []galleryVO.GalleryItemVO {
-	keyword := c.GetString("keyword", "")
-	// 演员
-	var actors []int64
-	jsonUtil.UnmarshalJsonString(c.GetString("actors", "[]"), &actors)
-	// tags
-	var tags []string
-	jsonUtil.UnmarshalJsonString(c.GetString("tags", "[]"), &tags)
+	var dto galleryDTO.GallerySearchDTO
+	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), &dto)
 
 	var voList []galleryVO.GalleryItemVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		items := impl.galleryBizService.SearchGallery(galleryDTO.GallerySearchDTO{
-			Keyword: keyword,
-			Actors:  actors,
-			Tags:    tags,
-		}, tx)
+		items := impl.galleryBizService.SearchGallery(dto, tx)
 
 		for _, item := range items {
 			voList = append(voList, galleryVO.GalleryItemVO{
