@@ -21,17 +21,16 @@ generate-deepcopy:
 	deepcopy-gen \
 	 -v 10 \
 	 --output-file zz_generated.deepcopy.go \
-	 --go-header-file ./boilerplate.go.txt \
-	 gitlab.alibaba-inc.com/dms/zhuque/models/... \
-	 gitlab.alibaba-inc.com/dms/zhuque/shared/... \
+	 --go-header-file ./boilerplate.txt \
+	 ./models/... \
 	|| { echo "deepcopy-gen failed"; exit 1; }
 
 	@echo "DeepCopy generation completed!"
 
 	@# 显示生成的文件
 	@echo "Generated files:"
-	find . -type f -name "*zz_generated.deepcopy.go" \
-	-not -path "./network_planning/*" | sort
+	find . -type f -name "*zz_generated.deepcopy.go" | sort
+	#-not -path "./network_planning/*" | sort
 
 clean-deepcopy:
 	@# 清除自动生成的deepcopy
