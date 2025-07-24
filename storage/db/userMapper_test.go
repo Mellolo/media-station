@@ -59,7 +59,7 @@ func TestUserMapperImpl_Insert(t *testing.T) {
 					PhoneNumber: "1234567890",
 					WechatId:    "wechat123",
 					Details: userDO.UserDetails{
-						VideoIds:   []int{1},
+						VideoIds:   []int64{1},
 						GalleryIds: nil,
 					},
 				},
@@ -101,7 +101,7 @@ func TestUserMapperImpl_SelectById(t *testing.T) {
 				PhoneNumber: "1234567890",
 				WechatId:    "wechat123",
 				Details: userDO.UserDetails{
-					VideoIds:   []int{1},
+					VideoIds:   []int64{1},
 					GalleryIds: nil,
 				},
 			},

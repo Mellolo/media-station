@@ -18,6 +18,14 @@ func (c *VideoAuthController) Login() {
 	})
 }
 
+// @router login/status [get]
+func (c *VideoAuthController) LoginStatus() {
+	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
+		token := facade.NewUserFacade().Login(&c.Controller)
+		return templates.NewJsonTemplate200(token)
+	})
+}
+
 type UserAuthController struct {
 	web.Controller
 }

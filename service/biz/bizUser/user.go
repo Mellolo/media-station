@@ -7,13 +7,15 @@ import (
 	"github.com/mellolo/common/errors"
 	"github.com/mellolo/common/utils/jwtUtil"
 	"media-station/models/do/userDO"
+	"media-station/models/dto/userDTO"
 	"media-station/storage/db"
 	"time"
 )
 
 type UserBizService interface {
-	Register(username, password string, tx ...orm.TxOrmer)
-	Login(username, password string, tx ...orm.TxOrmer) string
+	GetProfile(username string, tx ...orm.TxOrmer) userDTO.UserProfileDTO
+	Register(registerDTO userDTO.UserRegisterDTO, tx ...orm.TxOrmer)
+	Login(userLoginDTO userDTO.UserLoginDTO, tx ...orm.TxOrmer) string
 	Logout(token string)
 }
 
@@ -27,26 +29,41 @@ type UserBizServiceImpl struct {
 	userMapper db.UserMapper
 }
 
-func (impl UserBizServiceImpl) Register(username, password string, tx ...orm.TxOrmer) {
+func (impl UserBizServiceImpl) GetProfile(username string, tx ...orm.TxOrmer) userDTO.UserProfileDTO {
+	user, err := impl.userMapper.SelectByUsername(username, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, "get user profile failed"))
+	}
+	return userDTO.UserProfileDTO{
+		Username: user.Username,
+		Details: userDTO.UserDetailsDTO{
+			VideoIds:   user.Details.VideoIds,
+			GalleryIds: user.Details.GalleryIds,
+		},
+	}
+}
+
+func (impl UserBizServiceImpl) Register(registerDTO userDTO.UserRegisterDTO, tx ...orm.TxOrmer) {
 	_, err := impl.userMapper.Insert(&userDO.UserDO{
-		Username: username,
-		Password: password,
+		Username: registerDTO.Username,
+		Password: registerDTO.Password,
 	}, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, "user register failed"))
 	}
 }
 
-func (impl UserBizServiceImpl) Login(username, password string, tx ...orm.TxOrmer) string {
-	userDo, err := impl.userMapper.SelectByUsername(username, tx...)
+func (impl UserBizServiceImpl) Login(userLoginDTO userDTO.UserLoginDTO, tx ...orm.TxOrmer) string {
+	userDo, err := impl.userMapper.SelectByUsername(userLoginDTO.Username, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, "user login failed"))
 	}
-	if password != userDo.Password {
+	if userLoginDTO.Password != userDo.Password {
 		panic(errors.NewError("password error"))
 	}
 
 	secretKey := config.GetConfig("media", "secretKey", "user")
+
 	token, err := jwtUtil.GenerateToken(userDo.Username, secretKey, 1)
 	if err != nil {
 		panic(errors.WrapError(err, "generate token failed"))

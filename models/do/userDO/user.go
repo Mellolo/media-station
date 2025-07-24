@@ -9,6 +9,6 @@ type UserDO struct {
 }
 
 type UserDetails struct {
-	VideoIds   []int `json:"videoIds,omitempty"`
-	GalleryIds []int `json:"galleryIds,omitempty"`
+	VideoIds   []int64 `json:"videoIds,omitempty"`
+	GalleryIds []int64 `json:"galleryIds,omitempty"`
 }
