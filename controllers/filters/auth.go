@@ -5,6 +5,7 @@ import (
 	"github.com/beego/beego/v2/server/web/context"
 	"github.com/mellolo/common/cache"
 	"github.com/mellolo/common/config"
+	"github.com/mellolo/common/utils/jsonUtil"
 	"github.com/mellolo/common/utils/jwtUtil"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"media-station/controllers/templates"
@@ -26,7 +27,9 @@ func JWTAuth(ctx *context.Context) {
 
 	client, _ := cache.GetCache()
 	data, _ := client.Get("userTokenBacklist")
-	if blacklist, ok := data.([]string); ok {
+	if blacklistStr, ok := data.(string); ok {
+		var blacklist []string
+		jsonUtil.UnmarshalJsonString(blacklistStr, &blacklist)
 		if sets.NewString(blacklist...).Has(tokenStr) {
 			ctx.Input.SetData(templates.KeyExceptionData, templates.ExceptionData{
 				ErrorMsg: "invalid login",

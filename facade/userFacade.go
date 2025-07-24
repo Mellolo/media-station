@@ -51,7 +51,9 @@ func (impl *UserFacade) LoginStatus(c *web.Controller) (userVO.UserStatusProfile
 
 	client, _ := cache.GetCache()
 	data, _ := client.Get("userTokenBacklist")
-	if blacklist, ok := data.([]string); ok {
+	if blacklistStr, ok := data.(string); ok {
+		var blacklist []string
+		jsonUtil.UnmarshalJsonString(blacklistStr, &blacklist)
 		if sets.NewString(blacklist...).Has(tokenStr) {
 			return userVO.UserStatusProfileVO{}, false
 		}

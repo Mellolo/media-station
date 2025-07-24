@@ -77,9 +77,11 @@ func (impl UserBizServiceImpl) Login(userLoginDTO userDTO.UserLoginDTO, tx ...or
 func (impl UserBizServiceImpl) Logout(token string) {
 	client, _ := cache.GetCache()
 	data, _ := client.Get("userTokenBacklist")
-	if blacklist, ok := data.([]string); ok {
-		_ = client.Set("userTokenBacklist", append(blacklist, token), time.Hour)
+	if blacklistStr, ok := data.(string); ok {
+		var blacklist []string
+		jsonUtil.UnmarshalJsonString(blacklistStr, &blacklist)
+		_ = client.Set("userTokenBacklist", jsonUtil.GetJsonString(append(blacklist, token)), time.Hour)
 	} else {
-		_ = client.Set("userTokenBacklist", []string{token}, time.Hour)
+		_ = client.Set("userTokenBacklist", jsonUtil.GetJsonString([]string{token}), time.Hour)
 	}
 }
