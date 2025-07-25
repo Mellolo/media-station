@@ -94,7 +94,7 @@ func (impl *ActorFacade) CreateActor(c *web.Controller) int64 {
 	return id
 }
 
-func (impl *ActorFacade) UpdateActor(c *web.Controller) string {
+func (impl *ActorFacade) UpdateActor(c *web.Controller) {
 	// 名称
 	id, err := c.GetInt64("id")
 	if err != nil {
@@ -124,15 +124,14 @@ func (impl *ActorFacade) UpdateActor(c *web.Controller) string {
 		Description: description,
 	}
 
-	var lastCoverUrl string
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		lastCoverUrl = impl.actorBizService.UpdateActor(dto.Id, dto, coverDTO, tx)
+		lastCoverUrl := impl.actorBizService.UpdateActor(dto.Id, dto, coverDTO, tx)
+		impl.actorBizService.RemoveLastCover(lastCoverUrl)
 	})
 
-	return lastCoverUrl
 }
 
-func (impl *ActorFacade) DeleteActor(c *web.Controller) string {
+func (impl *ActorFacade) DeleteActor(c *web.Controller) {
 	// 获取演员ID
 	idStr := c.Ctx.Input.Param(":id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -140,10 +139,9 @@ func (impl *ActorFacade) DeleteActor(c *web.Controller) string {
 		panic(errors.WrapError(err, fmt.Sprintf("param [id] %s is invalid", idStr)))
 	}
 
-	var lastCoverUrl string
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		lastCoverUrl = impl.actorBizService.DeleteActor(id, tx)
+		lastCoverUrl := impl.actorBizService.DeleteActor(id, tx)
+		impl.actorBizService.RemoveLastCover(lastCoverUrl)
 	})
 
-	return lastCoverUrl
 }

@@ -23,6 +23,7 @@ type ActorBizService interface {
 	GetActorPage(id int64, tx ...orm.TxOrmer) actorDTO.ActorPageDTO
 	CreateActor(createDTO actorDTO.ActorCreateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
 	UpdateActor(id int64, updateDTO actorDTO.ActorUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) string
+	RemoveLastCover(lastCoverUrl string)
 	RemoveArt(dto actorDTO.ActorRemoveArtDTO, tx ...orm.TxOrmer)
 	DeleteActor(id int64, tx ...orm.TxOrmer) string
 }
@@ -86,7 +87,6 @@ func (impl *ActorBizServiceImpl) UpdateActor(id int64, updateDTO actorDTO.ActorU
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("actor [%d] doesn't exist", id)))
 	}
-	lastCoverUrl := actor.CoverUrl
 
 	if updateDTO.Name != "" {
 		actor.Name = updateDTO.Name
@@ -104,10 +104,12 @@ func (impl *ActorBizServiceImpl) UpdateActor(id int64, updateDTO actorDTO.ActorU
 	actor.Art.GalleryIds = galleryIds.List()
 
 	// 上传封面
+	lastCoverUrl := ""
 	if coverDTO.File != nil {
 		filename := impl.idGenerator.GenerateId(actorCoverIdGenerateKey)
 		path := fmt.Sprintf("%s.jpg", filename)
 		impl.pictureStorage.Upload(bucketActor, path, coverDTO.File, coverDTO.Size)
+		lastCoverUrl = actor.CoverUrl
 		actor.CoverUrl = path
 	}
 
@@ -116,6 +118,10 @@ func (impl *ActorBizServiceImpl) UpdateActor(id int64, updateDTO actorDTO.ActorU
 		panic(errors.WrapError(err, fmt.Sprintf("update actor [%d] failed", id)))
 	}
 	return lastCoverUrl
+}
+
+func (impl *ActorBizServiceImpl) RemoveLastCover(lastCoverUrl string) {
+	impl.pictureStorage.Remove(bucketActor, lastCoverUrl)
 }
 
 func (impl *ActorBizServiceImpl) RemoveArt(dto actorDTO.ActorRemoveArtDTO, tx ...orm.TxOrmer) {

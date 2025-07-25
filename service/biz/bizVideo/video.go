@@ -28,7 +28,7 @@ type VideoBizService interface {
 	GetVideoPage(id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
 	SearchVideo(createDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
 	CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
-	UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) string
+	UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer)
 	DeleteVideo(id int64, tx ...orm.TxOrmer) (string, string)
 	PlayVideo(id int64, rangeHeader ...string) videoDTO.VideoFileDTO
 
@@ -150,12 +150,11 @@ func (impl *VideoBizServiceImpl) CreateVideo(createDTO videoDTO.VideoCreateDTO, 
 	return id
 }
 
-func (impl *VideoBizServiceImpl) UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) string {
+func (impl *VideoBizServiceImpl) UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) {
 	video, err := impl.videoMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
 	}
-	lastCoverUrl := video.CoverUrl
 
 	// 更新video
 	if updateDTO.Name != "" {
@@ -179,8 +178,6 @@ func (impl *VideoBizServiceImpl) UpdateVideo(id int64, updateDTO videoDTO.VideoU
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("update video [%d] failed", id)))
 	}
-
-	return lastCoverUrl
 }
 
 func (impl *VideoBizServiceImpl) DeleteVideo(id int64, tx ...orm.TxOrmer) (string, string) {
