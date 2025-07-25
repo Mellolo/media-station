@@ -7,6 +7,42 @@ import (
 
 func init() {
 
+	beego.GlobalControllerRouter["media-station/controllers:ActorAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:ActorAuthController"],
+		beego.ControllerComments{
+			Method:           "Create",
+			Router:           `create`,
+			AllowHTTPMethods: []string{"post"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["media-station/controllers:ActorAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:ActorAuthController"],
+		beego.ControllerComments{
+			Method:           "Delete",
+			Router:           `delete/:id`,
+			AllowHTTPMethods: []string{"delete"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["media-station/controllers:ActorAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:ActorAuthController"],
+		beego.ControllerComments{
+			Method:           "Update",
+			Router:           `update`,
+			AllowHTTPMethods: []string{"post"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["media-station/controllers:ActorController"] = append(beego.GlobalControllerRouter["media-station/controllers:ActorController"],
+		beego.ControllerComments{
+			Method:           "Page",
+			Router:           `page/:id`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
 	beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"],
 		beego.ControllerComments{
 			Method:           "Picture",
