@@ -31,6 +31,17 @@ func (c *VideoController) Page() {
 	})
 }
 
+// @router play/:id [get]
+func (c *VideoController) Play() {
+	templates.ServeVideoTemplate(c.Ctx, func() templates.VideoTemplate {
+		vo := facade.NewVideoFacade().PlayVideo(&c.Controller)
+		return templates.VideoTemplate{
+			Reader: vo.Reader,
+			Header: vo.Header,
+		}
+	})
+}
+
 type VideoAuthController struct {
 	web.Controller
 }
