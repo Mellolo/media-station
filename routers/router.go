@@ -7,34 +7,17 @@ import (
 )
 
 func init() {
-	namespaceGallery := beego.NewNamespace("/gallery",
-		beego.NSInclude(&controllers.GalleryController{}),
+	namespaceApi := beego.NewNamespace("/api",
+		beego.NSNamespace("/gallery", beego.NSInclude(&controllers.GalleryController{})),
+		beego.NSNamespace("/video", beego.NSInclude(&controllers.VideoController{})),
+		beego.NSNamespace("/user", beego.NSInclude(&controllers.UserController{})),
+		beego.NSNamespace("/auth",
+			beego.NSBefore(filters.JWTAuth),
+			beego.NSNamespace("/gallery", beego.NSInclude(&controllers.GalleryAuthController{})),
+			beego.NSNamespace("/video", beego.NSInclude(&controllers.VideoAuthController{})),
+			beego.NSNamespace("/user", beego.NSInclude(&controllers.UserAuthController{})),
+		),
 	)
 
-	namespaceGalleryAuth := beego.NewNamespace("/galleryAuth",
-		beego.NSBefore(filters.JWTAuth),
-		beego.NSInclude(&controllers.GalleryAuthController{}),
-	)
-
-	namespaceVideo := beego.NewNamespace("/user",
-		beego.NSInclude(&controllers.VideoAuthController{}),
-	)
-
-	namespaceVideoAuth := beego.NewNamespace("/videoAuth",
-		beego.NSBefore(filters.JWTAuth),
-		beego.NSInclude(&controllers.VideoController{}),
-	)
-
-	namespaceUser := beego.NewNamespace("/user",
-		beego.NSInclude(&controllers.UserController{}),
-	)
-
-	namespaceUserAuth := beego.NewNamespace("/userAuth",
-		beego.NSBefore(filters.JWTAuth),
-		beego.NSInclude(&controllers.UserAuthController{}),
-	)
-
-	beego.AddNamespace(
-		namespaceGallery, namespaceVideo, namespaceUser,
-		namespaceGalleryAuth, namespaceVideoAuth, namespaceUserAuth)
+	beego.AddNamespace(namespaceApi)
 }
