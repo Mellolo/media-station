@@ -75,11 +75,11 @@ func (impl *ActorBizServiceImpl) UpdateActor(id int64, updateDTO actorDTO.ActorU
 		actor.Description = updateDTO.Description
 	}
 
-	videoIds := sets.NewInt64(updateDTO.Details.VideoIds...)
+	videoIds := sets.NewInt64(actor.Details.VideoIds...)
 	videoIds.Insert(updateDTO.Details.VideoIds...)
 	actor.Details.VideoIds = videoIds.List()
 
-	galleryIds := sets.NewInt64(updateDTO.Details.GalleryIds...)
+	galleryIds := sets.NewInt64(actor.Details.GalleryIds...)
 	galleryIds.Insert(updateDTO.Details.GalleryIds...)
 	actor.Details.GalleryIds = galleryIds.List()
 

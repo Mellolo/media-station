@@ -42,11 +42,11 @@ func (impl *TagBizServiceImpl) CreateOrUpdateTag(dto tagDTO.TagCreateOrUpdateDTO
 		}
 	}
 
-	videoIds := sets.NewInt64(dto.Details.VideoIds...)
+	videoIds := sets.NewInt64(tag.Details.VideoIds...)
 	videoIds.Insert(dto.Details.VideoIds...)
 	tag.Details.VideoIds = videoIds.List()
 
-	galleryIds := sets.NewInt64(dto.Details.GalleryIds...)
+	galleryIds := sets.NewInt64(tag.Details.GalleryIds...)
 	galleryIds.Insert(dto.Details.GalleryIds...)
 	tag.Details.GalleryIds = galleryIds.List()
 
