@@ -125,7 +125,7 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller, ch chan string) {
 		for _, actorId := range createDTO.Actors {
 			updateDTO := actorDTO.ActorUpdateDTO{
 				Id: actorId,
-				Details: actorDTO.ActorDetailsDTO{
+				Art: actorDTO.ActorArtDTO{
 					VideoIds: []int64{id},
 				},
 			}

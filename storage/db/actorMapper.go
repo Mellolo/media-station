@@ -24,12 +24,13 @@ func NewActorMapper() *ActorMapperImpl {
 func (impl *ActorMapperImpl) Insert(actor *actorDO.ActorDO, tx ...orm.TxOrmer) (int64, error) {
 	executor := getQueryExecutor(tx...)
 
+	// todo 可能会扩展更复杂的处理
 	record := actorDAO.ActorRecord{
 		Name:        actor.Name,
 		Description: actor.Description,
 		Creator:     actor.Creator,
 		CoverUrl:    actor.CoverUrl,
-		Details:     jsonUtil.GetJsonString(actor.Details),
+		Details:     jsonUtil.GetJsonString(actor.Art),
 	}
 
 	id, err := executor.Insert(&record)
@@ -44,8 +45,9 @@ func (impl *ActorMapperImpl) SelectById(id int64, tx ...orm.TxOrmer) (*actorDO.A
 		return nil, err
 	}
 
-	var actorDetails actorDO.ActorDetailsDO
-	jsonUtil.UnmarshalJsonString(record.Details, &actorDetails)
+	// todo 可能会扩展更复杂的处理
+	var actorArt actorDO.ActorArtDO
+	jsonUtil.UnmarshalJsonString(record.Details, &actorArt)
 	do := &actorDO.ActorDO{
 		Id:          record.Id,
 		CreateAt:    record.CreatedAt.String(),
@@ -53,7 +55,7 @@ func (impl *ActorMapperImpl) SelectById(id int64, tx ...orm.TxOrmer) (*actorDO.A
 		Description: record.Description,
 		Creator:     record.Creator,
 		CoverUrl:    record.CoverUrl,
-		Details:     actorDetails,
+		Art:         actorArt,
 	}
 	return do, nil
 }
@@ -61,6 +63,7 @@ func (impl *ActorMapperImpl) SelectById(id int64, tx ...orm.TxOrmer) (*actorDO.A
 func (impl *ActorMapperImpl) Update(id int64, actor *actorDO.ActorDO, tx ...orm.TxOrmer) error {
 	executor := getQueryExecutor(tx...)
 
+	// todo 可能会扩展更复杂的处理
 	record := actorDAO.ActorRecord{
 		CommonColumn: daoCommon.CommonColumn{
 			Id: id,
@@ -69,7 +72,7 @@ func (impl *ActorMapperImpl) Update(id int64, actor *actorDO.ActorDO, tx ...orm.
 		Description: actor.Description,
 		Creator:     actor.Creator,
 		CoverUrl:    actor.CoverUrl,
-		Details:     jsonUtil.GetJsonString(actor.Details),
+		Details:     jsonUtil.GetJsonString(actor.Art),
 	}
 	_, err := executor.Update(&record)
 	return err

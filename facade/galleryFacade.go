@@ -132,7 +132,7 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller, ch chan string) {
 		for _, actorId := range createDTO.Actors {
 			updateDTO := actorDTO.ActorUpdateDTO{
 				Id: actorId,
-				Details: actorDTO.ActorDetailsDTO{
+				Art: actorDTO.ActorArtDTO{
 					GalleryIds: []int64{id},
 				},
 			}

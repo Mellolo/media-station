@@ -10,20 +10,38 @@ type ActorCreateDTO struct {
 
 // +k8s:deepcopy-gen=true
 type ActorUpdateDTO struct {
-	Id          int64           `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Details     ActorDetailsDTO `json:"details"`
+	Id          int64       `json:"id"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Art         ActorArtDTO `json:"art"`
 }
 
 // +k8s:deepcopy-gen=true
 type ActorRemoveArtDTO struct {
-	Id      int64           `json:"id"`
-	Details ActorDetailsDTO `json:"details"`
+	Id  int64       `json:"id"`
+	Art ActorArtDTO `json:"art"`
 }
 
 // +k8s:deepcopy-gen=true
-type ActorDetailsDTO struct {
+type ActorPageDTO struct {
+	Id          int64       `json:"id"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Creator     string      `json:"creator"`
+	CoverUrl    string      `json:"coverUrl"`
+	Art         ActorArtDTO `json:"art"`
+}
+
+// +k8s:deepcopy-gen=true
+type ActorArtDTO struct {
 	VideoIds   []int64 `json:"videoIds"`
 	GalleryIds []int64 `json:"galleryIds"`
+}
+
+// +k8s:deepcopy-gen=true
+type ActorItemDTO struct {
+	Id          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	CoverUrl    string `json:"coverUrl"`
 }

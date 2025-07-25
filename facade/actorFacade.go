@@ -10,6 +10,7 @@ import (
 	"media-station/models/dto/actorDTO"
 	"media-station/models/dto/fileDTO"
 	"media-station/models/dto/userDTO"
+	"media-station/models/vo/actorVO"
 	"media-station/service/biz/bizActor"
 	"media-station/storage/db"
 	"strconv"
@@ -22,6 +23,26 @@ type ActorFacade struct {
 func NewActorFacade() *ActorFacade {
 	return &ActorFacade{
 		actorBizService: bizActor.NewActorBizService(),
+	}
+}
+
+func (impl *ActorFacade) GetActorPage(c *web.Controller) actorVO.ActorPageVO {
+	// 获取演员ID
+	idStr := c.Ctx.Input.Param(":id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("param [id] %s is invalid", idStr)))
+	}
+
+	actorPage := impl.actorBizService.GetActorPage(id)
+
+	return actorVO.ActorPageVO{
+		Id:          actorPage.Id,
+		Name:        actorPage.Name,
+		Description: actorPage.Description,
+		Creator:     actorPage.Creator,
+		VideoIds:    actorPage.Art.VideoIds,
+		GalleryIds:  actorPage.Art.GalleryIds,
 	}
 }
 

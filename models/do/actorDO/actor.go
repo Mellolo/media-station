@@ -9,11 +9,11 @@ type ActorDO struct {
 	Description string
 	Creator     string
 	CoverUrl    string
-	Details     ActorDetailsDO
+	Art         ActorArtDO
 }
 
 // +k8s:deepcopy-gen=true
-type ActorDetailsDO struct {
+type ActorArtDO struct {
 	VideoIds   []int64 `json:"videoIds,omitempty"`
 	GalleryIds []int64 `json:"galleryIds,omitempty"`
 }
