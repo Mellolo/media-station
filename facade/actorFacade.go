@@ -34,16 +34,20 @@ func (impl *ActorFacade) GetActorPage(c *web.Controller) actorVO.ActorPageVO {
 		panic(errors.WrapError(err, fmt.Sprintf("param [id] %s is invalid", idStr)))
 	}
 
-	actorPage := impl.actorBizService.GetActorPage(id)
+	var vo actorVO.ActorPageVO
+	db.DoTransaction(func(tx orm.TxOrmer) {
+		actorPage := impl.actorBizService.GetActorPage(id)
+		vo = actorVO.ActorPageVO{
+			Id:          actorPage.Id,
+			Name:        actorPage.Name,
+			Description: actorPage.Description,
+			Creator:     actorPage.Creator,
+			VideoIds:    actorPage.Art.VideoIds,
+			GalleryIds:  actorPage.Art.GalleryIds,
+		}
+	})
 
-	return actorVO.ActorPageVO{
-		Id:          actorPage.Id,
-		Name:        actorPage.Name,
-		Description: actorPage.Description,
-		Creator:     actorPage.Creator,
-		VideoIds:    actorPage.Art.VideoIds,
-		GalleryIds:  actorPage.Art.GalleryIds,
-	}
+	return vo
 }
 
 func (impl *ActorFacade) CreateActor(c *web.Controller) int64 {
