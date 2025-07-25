@@ -61,7 +61,7 @@ func TestTagMapperImpl_SelectById(t *testing.T) {
 				Id:      9,
 				Name:    "c",
 				Creator: "coc",
-				Details: tagDO.TagDetails{
+				Art: tagDO.TagArt{
 					VideoIds:   []int64{2},
 					GalleryIds: []int64{2},
 				},
@@ -102,7 +102,7 @@ func TestTagMapperImpl_InsertOrUpdate(t *testing.T) {
 				tag: &tagDO.TagDO{
 					Name:    "b",
 					Creator: "bob",
-					Details: tagDO.TagDetails{
+					Art: tagDO.TagArt{
 						VideoIds:   []int64{2},
 						GalleryIds: []int64{2},
 					},
@@ -116,7 +116,7 @@ func TestTagMapperImpl_InsertOrUpdate(t *testing.T) {
 				tag: &tagDO.TagDO{
 					Name:    "c",
 					Creator: "coc",
-					Details: tagDO.TagDetails{
+					Art: tagDO.TagArt{
 						VideoIds:   []int64{2},
 						GalleryIds: []int64{2},
 					},

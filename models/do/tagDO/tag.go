@@ -6,11 +6,11 @@ type TagDO struct {
 	CreateAt string
 	Name     string
 	Creator  string
-	Details  TagDetails
+	Art      TagArt
 }
 
 // +k8s:deepcopy-gen=true
-type TagDetails struct {
+type TagArt struct {
 	VideoIds   []int64 `json:"videoIds,omitempty"`
 	GalleryIds []int64 `json:"galleryIds,omitempty"`
 }

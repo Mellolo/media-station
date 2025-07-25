@@ -42,13 +42,13 @@ func (impl *TagBizServiceImpl) CreateOrUpdateTag(dto tagDTO.TagCreateOrUpdateDTO
 		}
 	}
 
-	videoIds := sets.NewInt64(tag.Details.VideoIds...)
+	videoIds := sets.NewInt64(tag.Art.VideoIds...)
 	videoIds.Insert(dto.Details.VideoIds...)
-	tag.Details.VideoIds = videoIds.List()
+	tag.Art.VideoIds = videoIds.List()
 
-	galleryIds := sets.NewInt64(tag.Details.GalleryIds...)
+	galleryIds := sets.NewInt64(tag.Art.GalleryIds...)
 	galleryIds.Insert(dto.Details.GalleryIds...)
-	tag.Details.GalleryIds = galleryIds.List()
+	tag.Art.GalleryIds = galleryIds.List()
 
 	err = impl.tagMapper.InsertOrUpdate(tag, tx...)
 	if err != nil {
@@ -61,8 +61,8 @@ func (impl *TagBizServiceImpl) RemoveArt(dto tagDTO.TagRemoveArtDTO, tx ...orm.T
 	if err != nil && !pkgErrors.Is(err, orm.ErrNoRows) {
 		panic(errors.WrapError(err, "select tag failed"))
 	}
-	tag.Details.VideoIds = sets.NewInt64(tag.Details.VideoIds...).Delete(dto.Details.VideoIds...).List()
-	tag.Details.GalleryIds = sets.NewInt64(tag.Details.GalleryIds...).Delete(dto.Details.GalleryIds...).List()
+	tag.Art.VideoIds = sets.NewInt64(tag.Art.VideoIds...).Delete(dto.Details.VideoIds...).List()
+	tag.Art.GalleryIds = sets.NewInt64(tag.Art.GalleryIds...).Delete(dto.Details.GalleryIds...).List()
 	err = impl.tagMapper.InsertOrUpdate(tag, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("remove artwork for tag [%s] failed", dto.Name)))

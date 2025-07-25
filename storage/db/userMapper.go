@@ -23,12 +23,13 @@ func NewUserMapper() *UserMapperImpl {
 func (impl *UserMapperImpl) Insert(user *userDO.UserDO, tx ...orm.TxOrmer) (int64, error) {
 	executor := getQueryExecutor(tx...)
 
+	// todo 有更复杂处理
 	record := userDAO.UserRecord{
 		Username:    user.Username,
 		Password:    user.Password,
 		PhoneNumber: user.PhoneNumber,
 		WechatId:    user.WechatId,
-		Details:     jsonUtil.GetJsonString(user.Details),
+		Details:     jsonUtil.GetJsonString(user.Art),
 	}
 
 	return executor.Insert(&record)
@@ -42,14 +43,15 @@ func (impl *UserMapperImpl) SelectByUsername(username string, tx ...orm.TxOrmer)
 		return nil, err
 	}
 
-	var userDetails userDO.UserDetails
-	jsonUtil.UnmarshalJsonString(record.Details, &userDetails)
+	// todo 有更复杂处理
+	var userArt userDO.UserArt
+	jsonUtil.UnmarshalJsonString(record.Details, &userArt)
 	do := &userDO.UserDO{
 		Username:    record.Username,
 		Password:    record.Password,
 		PhoneNumber: record.PhoneNumber,
 		WechatId:    record.WechatId,
-		Details:     userDetails,
+		Art:         userArt,
 	}
 	return do, nil
 }
@@ -57,11 +59,12 @@ func (impl *UserMapperImpl) SelectByUsername(username string, tx ...orm.TxOrmer)
 func (impl *UserMapperImpl) Update(user *userDO.UserDO, tx ...orm.TxOrmer) error {
 	executor := getQueryExecutor(tx...)
 
+	// todo 有更复杂处理
 	_, err := executor.QueryTable(userDAO.TableUser).Filter("username", user.Username).Update(orm.Params{
 		"password":     user.Password,
 		"phone_number": user.PhoneNumber,
 		"wechat_id":    user.WechatId,
-		"details":      jsonUtil.GetJsonString(user.Details),
+		"details":      jsonUtil.GetJsonString(user.Art),
 	})
 	return err
 }

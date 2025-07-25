@@ -6,11 +6,11 @@ type UserDO struct {
 	Password    string
 	PhoneNumber string
 	WechatId    string
-	Details     UserDetails
+	Art         UserArt
 }
 
 // +k8s:deepcopy-gen=true
-type UserDetails struct {
+type UserArt struct {
 	VideoIds   []int64 `json:"videoIds,omitempty"`
 	GalleryIds []int64 `json:"galleryIds,omitempty"`
 }

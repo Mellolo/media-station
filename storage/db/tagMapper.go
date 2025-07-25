@@ -27,14 +27,15 @@ func (impl *TagMapperImpl) SelectByName(name string, tx ...orm.TxOrmer) (*tagDO.
 		return nil, err
 	}
 
-	var tagDetails tagDO.TagDetails
-	jsonUtil.UnmarshalJsonString(record.Details, &tagDetails)
+	// todo 有更复杂处理
+	var tagArt tagDO.TagArt
+	jsonUtil.UnmarshalJsonString(record.Details, &tagArt)
 	do := &tagDO.TagDO{
 		Id:       record.Id,
 		CreateAt: record.CreatedAt.String(),
 		Name:     record.Name,
 		Creator:  record.Creator,
-		Details:  tagDetails,
+		Art:      tagArt,
 	}
 	return do, nil
 }
@@ -42,10 +43,11 @@ func (impl *TagMapperImpl) SelectByName(name string, tx ...orm.TxOrmer) (*tagDO.
 func (impl *TagMapperImpl) InsertOrUpdate(tag *tagDO.TagDO, tx ...orm.TxOrmer) error {
 	executor := getQueryExecutor(tx...)
 
+	// todo 有更复杂处理
 	record := tagDAO.TagRecord{
 		Name:    tag.Name,
 		Creator: tag.Creator,
-		Details: jsonUtil.GetJsonString(tag.Details),
+		Details: jsonUtil.GetJsonString(tag.Art),
 	}
 	_, err := executor.InsertOrUpdate(&record)
 	return err

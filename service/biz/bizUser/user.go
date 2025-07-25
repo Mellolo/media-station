@@ -38,8 +38,8 @@ func (impl UserBizServiceImpl) GetProfile(username string, tx ...orm.TxOrmer) us
 	return userDTO.UserProfileDTO{
 		Username: user.Username,
 		Details: userDTO.UserDetailsDTO{
-			VideoIds:   user.Details.VideoIds,
-			GalleryIds: user.Details.GalleryIds,
+			VideoIds:   user.Art.VideoIds,
+			GalleryIds: user.Art.GalleryIds,
 		},
 	}
 }

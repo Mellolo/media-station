@@ -58,7 +58,7 @@ func TestUserMapperImpl_Insert(t *testing.T) {
 					Password:    "password123",
 					PhoneNumber: "1234567890",
 					WechatId:    "wechat123",
-					Details: userDO.UserDetails{
+					Art: userDO.UserArt{
 						VideoIds:   []int64{1},
 						GalleryIds: nil,
 					},
@@ -100,7 +100,7 @@ func TestUserMapperImpl_SelectById(t *testing.T) {
 				Password:    "password123",
 				PhoneNumber: "1234567890",
 				WechatId:    "wechat123",
-				Details: userDO.UserDetails{
+				Art: userDO.UserArt{
 					VideoIds:   []int64{1},
 					GalleryIds: nil,
 				},
@@ -142,7 +142,7 @@ func TestUserMapperImpl_Update(t *testing.T) {
 					Password:    "new_password",
 					PhoneNumber: "0987654321",
 					WechatId:    "wechat456",
-					Details: userDO.UserDetails{
+					Art: userDO.UserArt{
 						VideoIds:   nil,
 						GalleryIds: nil,
 					},
