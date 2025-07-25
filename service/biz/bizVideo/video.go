@@ -1,9 +1,12 @@
 package bizVideo
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/mellolo/common/errors"
+	"github.com/mellolo/common/utils/snapshotUtil"
+	"io"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"media-station/enum"
 	"media-station/generator"
@@ -12,6 +15,7 @@ import (
 	"media-station/models/dto/videoDTO"
 	"media-station/storage/db"
 	"media-station/storage/oss"
+	"time"
 )
 
 const (
@@ -23,8 +27,8 @@ const (
 type VideoBizService interface {
 	GetVideoPage(id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
 	SearchVideo(createDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
-	CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO, coverDTO fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
-	UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) string
+	CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
+	UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) string
 	DeleteVideo(id int64, tx ...orm.TxOrmer) (string, string)
 	PlayVideo(id int64, rangeHeader ...string) videoDTO.VideoFileDTO
 
@@ -107,7 +111,7 @@ func (impl *VideoBizServiceImpl) SearchVideo(createDTO videoDTO.VideoSearchDTO, 
 	return items
 }
 
-func (impl *VideoBizServiceImpl) CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO, coverDTO fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64 {
+func (impl *VideoBizServiceImpl) CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64 {
 	if videoDTO.File == nil {
 		panic(errors.NewError("video file is empty"))
 	}
@@ -124,18 +128,20 @@ func (impl *VideoBizServiceImpl) CreateVideo(createDTO videoDTO.VideoCreateDTO, 
 	} else {
 		video.PermissionLevel = enum.PermissionPublic
 	}
-	// 上传封面
-	if coverDTO.File != nil {
-		filename := impl.idGenerator.GenerateId(videoCoverIdGenerateKey)
-		path := fmt.Sprintf("covers/%s.jpg", filename)
-		impl.pictureStorage.Upload(bucketVideo, path, coverDTO.File, coverDTO.Size)
-		video.CoverUrl = path
-	}
+
 	// 上传视频
 	filename := impl.idGenerator.GenerateId(videoIdGenerateKey)
 	path := fmt.Sprintf("videos/%s.mp4", filename)
 	impl.videoStorage.Upload(bucketVideo, path, videoDTO.File, videoDTO.Size, ch)
 	video.VideoUrl = path
+
+	// 上传封面
+	url := impl.videoStorage.GetStreamURL(bucketVideo, path, 3*time.Minute)
+	filename = impl.idGenerator.GenerateId(videoCoverIdGenerateKey)
+	path = fmt.Sprintf("covers/%s.jpg", filename)
+	data, err := snapshotUtil.CaptureScreenshotFromStreamURL(url)
+	impl.pictureStorage.Upload(bucketVideo, path, io.NopCloser(bytes.NewReader(data)), int64(len(data)))
+	video.CoverUrl = path
 
 	id, err := impl.videoMapper.Insert(video, tx...)
 	if err != nil {
@@ -144,7 +150,7 @@ func (impl *VideoBizServiceImpl) CreateVideo(createDTO videoDTO.VideoCreateDTO, 
 	return id
 }
 
-func (impl *VideoBizServiceImpl) UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) string {
+func (impl *VideoBizServiceImpl) UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) string {
 	video, err := impl.videoMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
@@ -166,13 +172,6 @@ func (impl *VideoBizServiceImpl) UpdateVideo(id int64, updateDTO videoDTO.VideoU
 	}
 	if sets.NewString(enum.PermissionLevels...).Has(updateDTO.PermissionLevel) {
 		video.PermissionLevel = updateDTO.PermissionLevel
-	}
-	// 更新封面
-	if coverDTO.File != nil {
-		filename := impl.idGenerator.GenerateId(videoCoverIdGenerateKey)
-		path := fmt.Sprintf("covers/%s.jpg", filename)
-		impl.pictureStorage.Upload(bucketVideo, path, coverDTO.File, coverDTO.Size)
-		video.CoverUrl = path
 	}
 
 	// 更新写入数据库

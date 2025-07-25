@@ -108,20 +108,8 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller, ch chan string) {
 		PermissionLevel: permissionLevel,
 	}
 
-	// 封面文件
-	coverDTO := fileDTO.FileDTO{}
-	reader, header, err := c.GetFile("cover")
-	if err != nil {
-		//panic(errors.WrapError(err, "get video cover file failed"))
-	} else {
-		coverDTO = fileDTO.FileDTO{
-			File: reader,
-			Size: header.Size,
-		}
-	}
-
 	// 视频文件
-	reader, header, err = c.GetFile("file")
+	reader, header, err := c.GetFile("file")
 	if err != nil {
 		panic(errors.WrapError(err, "get video file failed"))
 	}
@@ -132,7 +120,7 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller, ch chan string) {
 
 	db.DoTransaction(func(tx orm.TxOrmer) {
 		// 创建视频
-		id := impl.videoBizService.CreateVideo(createDTO, videoFileDTO, coverDTO, ch)
+		id := impl.videoBizService.CreateVideo(createDTO, videoFileDTO, ch)
 		// 更新actor作品
 		for _, actorId := range createDTO.Actors {
 			updateDTO := actorDTO.ActorUpdateDTO{

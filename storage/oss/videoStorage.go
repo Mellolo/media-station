@@ -9,6 +9,7 @@ import (
 	"io"
 	"media-station/models/do/videoDO"
 	"media-station/util"
+	"time"
 )
 
 const (
@@ -17,6 +18,7 @@ const (
 
 type VideoStorage interface {
 	Upload(bucket, path string, file io.ReadCloser, size int64, ch chan string)
+	GetStreamURL(bucket, path string, expire time.Duration) string
 	Download(bucket, path string, rangeHeader ...string) videoDO.VideoFileDO
 	Remove(bucket, path string)
 }
@@ -95,6 +97,15 @@ func (impl *VideoStorageImpl) Upload(bucket, path string, file io.ReadCloser, si
 				util.FormatErrorLog(uniqueId.String(), panicContext.Err.Error(), panicContext.RecoverStack),
 			))
 	}
+}
+
+func (impl *VideoStorageImpl) GetStreamURL(bucket, path string, expire time.Duration) string {
+	url, err := impl.client.GetObjectURL(bucket, path, expire)
+	if err != nil {
+		panic(errors.WrapError(err, "get video failed"))
+	}
+
+	return url
 }
 
 func (impl *VideoStorageImpl) Download(bucket, path string, rangeHeader ...string) videoDO.VideoFileDO {
