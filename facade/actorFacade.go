@@ -78,7 +78,7 @@ func (impl *ActorFacade) CreateActor(c *web.Controller) int64 {
 
 	// 获取封面文件
 	coverDTO := fileDTO.FileDTO{}
-	reader, header, err := c.GetFile("coverI")
+	reader, header, err := c.GetFile("coverImage")
 	if err == nil {
 		coverDTO = fileDTO.FileDTO{
 			File: reader,
