@@ -1,5 +1,10 @@
 package actorDTO
 
+import (
+	"io"
+	"net/http"
+)
+
 // +k8s:deepcopy-gen=true
 // ActorCreateDTO 表示创建演员的数据传输对象
 type ActorCreateDTO struct {
@@ -44,4 +49,9 @@ type ActorItemDTO struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	CoverUrl    string `json:"coverUrl"`
+}
+
+type ActorCoverFileDTO struct {
+	Reader io.ReadCloser
+	Header http.Header
 }

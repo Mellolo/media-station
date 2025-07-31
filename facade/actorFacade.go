@@ -50,6 +50,26 @@ func (impl *ActorFacade) GetActorPage(c *web.Controller) actorVO.ActorPageVO {
 	return vo
 }
 
+func (impl *ActorFacade) GetActorCover(c *web.Controller) actorVO.ActorCoverFileVO {
+	// 获取演员ID
+	idStr := c.Ctx.Input.Param(":id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("param [id] %s is invalid", idStr)))
+	}
+
+	var vo actorVO.ActorCoverFileVO
+	db.DoTransaction(func(tx orm.TxOrmer) {
+		cover := impl.actorBizService.GetActorCover(id)
+		vo = actorVO.ActorCoverFileVO{
+			Reader: cover.Reader,
+			Header: cover.Header,
+		}
+	})
+
+	return vo
+}
+
 func (impl *ActorFacade) CreateActor(c *web.Controller) int64 {
 	// 名称
 	name := c.GetString("name", "")

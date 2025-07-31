@@ -36,6 +36,15 @@ func init() {
 
 	beego.GlobalControllerRouter["media-station/controllers:ActorController"] = append(beego.GlobalControllerRouter["media-station/controllers:ActorController"],
 		beego.ControllerComments{
+			Method:           "Cover",
+			Router:           `cover/:id`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["media-station/controllers:ActorController"] = append(beego.GlobalControllerRouter["media-station/controllers:ActorController"],
+		beego.ControllerComments{
 			Method:           "Page",
 			Router:           `page/:id`,
 			AllowHTTPMethods: []string{"get"},

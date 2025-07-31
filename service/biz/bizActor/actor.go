@@ -21,6 +21,7 @@ const (
 
 type ActorBizService interface {
 	GetActorPage(id int64, tx ...orm.TxOrmer) actorDTO.ActorPageDTO
+	GetActorCover(id int64, tx ...orm.TxOrmer) actorDTO.ActorCoverFileDTO
 	CreateActor(createDTO actorDTO.ActorCreateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
 	UpdateActor(id int64, updateDTO actorDTO.ActorUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) string
 	RemoveLastCover(lastCoverUrl string)
@@ -58,6 +59,19 @@ func (impl *ActorBizServiceImpl) GetActorPage(id int64, tx ...orm.TxOrmer) actor
 			VideoIds:   actor.Art.VideoIds,
 			GalleryIds: actor.Art.GalleryIds,
 		},
+	}
+}
+
+func (impl *ActorBizServiceImpl) GetActorCover(id int64, tx ...orm.TxOrmer) actorDTO.ActorCoverFileDTO {
+	actor, err := impl.actorMapper.SelectById(id, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("get actor [%d] failed", id)))
+	}
+
+	pic := impl.pictureStorage.Download(bucketActor, actor.CoverUrl)
+	return actorDTO.ActorCoverFileDTO{
+		Reader: pic.Reader,
+		Header: pic.Header,
 	}
 }
 

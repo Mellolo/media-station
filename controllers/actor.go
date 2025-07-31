@@ -18,6 +18,17 @@ func (c *ActorController) Page() {
 	})
 }
 
+// @router cover/:id [get]
+func (c *ActorController) Cover() {
+	templates.ServePictureTemplate(c.Ctx, func() templates.PictureTemplate {
+		vo := facade.NewActorFacade().GetActorCover(&c.Controller)
+		return templates.PictureTemplate{
+			Reader: vo.Reader,
+			Header: vo.Header,
+		}
+	})
+}
+
 type ActorAuthController struct {
 	web.Controller
 }

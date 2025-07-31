@@ -25,7 +25,7 @@ type GalleryBizService interface {
 	CreateGallery(createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
 	UpdateGallery(id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer)
 	DeleteGallery(id int64, tx ...orm.TxOrmer) (string, int)
-	ShowGalleryPage(id int64, page int) galleryDTO.PictureDTO
+	ShowGalleryPage(id int64, page int) galleryDTO.PictureFileDTO
 
 	RemoveGalleryDir(dir string, count int)
 }
@@ -192,7 +192,7 @@ func (impl *GalleryBizServiceImpl) DeleteGallery(id int64, tx ...orm.TxOrmer) (s
 	return gallery.GalleryUrl, gallery.PageCount
 }
 
-func (impl *GalleryBizServiceImpl) ShowGalleryPage(id int64, page int) galleryDTO.PictureDTO {
+func (impl *GalleryBizServiceImpl) ShowGalleryPage(id int64, page int) galleryDTO.PictureFileDTO {
 	gallery, err := impl.galleryMapper.SelectById(id)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
@@ -201,7 +201,7 @@ func (impl *GalleryBizServiceImpl) ShowGalleryPage(id int64, page int) galleryDT
 		panic(errors.NewError(fmt.Sprintf("gallery [%d] page [%d] doesn't exist", id, page)))
 	}
 	do := impl.pictureStorage.Download(bucketGallery, fmt.Sprintf("%s/%d.jpg", gallery.GalleryUrl, page))
-	return galleryDTO.PictureDTO{
+	return galleryDTO.PictureFileDTO{
 		Header: do.Header,
 		Reader: do.Reader,
 	}

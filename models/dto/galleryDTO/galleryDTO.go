@@ -54,7 +54,7 @@ type GalleryPageDTO struct {
 	PermissionLevel string   `json:"permissionLevel"`
 }
 
-type PictureDTO struct {
+type PictureFileDTO struct {
 	Reader io.ReadCloser
 	Header http.Header
 }
