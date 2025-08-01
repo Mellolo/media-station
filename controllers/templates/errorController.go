@@ -17,50 +17,56 @@ type ErrorController struct {
 
 func (c *ErrorController) Error400() {
 	ServeErrorJsonTemplate(c.Ctx, func() JsonTemplate {
-		errorMsg := getErrorMsg(c.Ctx, fmt.Sprintf("有问题的请求(URL地址:%s)", c.Ctx.Request.URL.String()))
-		return NewJsonTemplate400(errorMsg)
+		response := NewJsonTemplate400(fmt.Sprintf("有问题的请求(URL地址:%s)", c.Ctx.Request.URL.String()))
+		response.Data = formErrorData(c.Ctx)
+		return response
 	})
 }
 
 func (c *ErrorController) Error401() {
 	ServeErrorJsonTemplate(c.Ctx, func() JsonTemplate {
-		errorMsg := getErrorMsg(c.Ctx, fmt.Sprintf("当前请求未完成鉴权(URL地址:%s)", c.Ctx.Request.URL.String()))
-		return NewJsonTemplate401(errorMsg)
+		response := NewJsonTemplate401(fmt.Sprintf("当前请求未完成鉴权(URL地址:%s)", c.Ctx.Request.URL.String()))
+		response.Data = formErrorData(c.Ctx)
+		return response
 	})
 }
 
 func (c *ErrorController) Error404() {
 	ServeErrorJsonTemplate(c.Ctx, func() JsonTemplate {
-		errorMsg := getErrorMsg(c.Ctx, fmt.Sprintf("当前请求地址(%s)不存在", c.Ctx.Request.RequestURI))
-		return NewJsonTemplate404(errorMsg)
+		response := NewJsonTemplate404(fmt.Sprintf("当前请求地址(%s)不存在", c.Ctx.Request.RequestURI))
+		response.Data = formErrorData(c.Ctx)
+		return response
 	})
 }
 
 func (c *ErrorController) Error416() {
 	ServeErrorJsonTemplate(c.Ctx, func() JsonTemplate {
-		errorMsg := getErrorMsg(c.Ctx, fmt.Sprintf("无法满足指定Range(URL地址:%s)", c.Ctx.Request.URL.String()))
-		return NewJsonTemplate400(errorMsg)
+		response := NewJsonTemplate400(fmt.Sprintf("无法满足指定Range(URL地址:%s)", c.Ctx.Request.URL.String()))
+		response.Data = formErrorData(c.Ctx)
+		return response
 	})
 }
 
 func (c *ErrorController) Error500() {
 	ServeErrorJsonTemplate(c.Ctx, func() JsonTemplate {
-		errorMsg := getErrorMsg(c.Ctx, fmt.Sprintf("系统检测到当前请求未能正常完成(URL地址：%s)", c.Ctx.Request.URL.String()))
-		return NewJsonTemplate500(errorMsg)
+		response := NewJsonTemplate500(fmt.Sprintf("系统检测到当前请求未能正常完成(URL地址：%s)", c.Ctx.Request.URL.String()))
+		response.Data = formErrorData(c.Ctx)
+		return response
 	})
 }
 
-func getErrorMsg(ctx *context.Context, msg string) string {
+func formErrorData(ctx *context.Context) map[string]string {
+	result := make(map[string]string)
 	if data, ok := ctx.Input.GetData(KeyExceptionData).(ExceptionData); ok {
 		if data.Uuid != "" {
-			msg = fmt.Sprintf("%s\n[uuid] %s", msg, data.Uuid)
+			result["uuid"] = data.Uuid
 		}
 		if data.ErrorMsg != "" {
-			msg = fmt.Sprintf("%s\n[message] %s", msg, data.ErrorMsg)
+			result["errorMsg"] = data.ErrorMsg
 		}
 		if data.Stack != "" {
-			msg = fmt.Sprintf("%s\n[stack]\n%s", msg, data.Stack)
+			result["stack"] = data.Stack
 		}
 	}
-	return msg
+	return result
 }
