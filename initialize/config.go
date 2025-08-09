@@ -22,6 +22,8 @@ func InitConfig() {
 		LogDir:              web.AppConfig.DefaultString("nacos::nacos_log_dir", "./logs/nacos/"),
 		CacheDir:            web.AppConfig.DefaultString("nacos::nacos_cache_dir", "./cache/nacos"),
 		LogLevel:            web.AppConfig.DefaultString("nacos::nacos_log_level", ""),
+		Username:            web.AppConfig.DefaultString("nacos::nacos_username", "nacos"),
+		Password:            web.AppConfig.DefaultString("nacos::nacos_password", "nacos"),
 	}
 
 	client, err := clients.NewConfigClient(vo.NacosClientParam{
@@ -31,7 +33,7 @@ func InitConfig() {
 	if err != nil {
 		panic(errors.WrapError(err, "new configuration client failed"))
 	}
-	
+
 	// 添加nacos配置客户端的初始化
 	err = config.InitConfigClient(config.NewNacosConfigClient(client))
 	if err != nil {
