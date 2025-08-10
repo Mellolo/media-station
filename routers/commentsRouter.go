@@ -56,7 +56,7 @@ func init() {
 		beego.ControllerComments{
 			Method:           "SearchActor",
 			Router:           `search`,
-			AllowHTTPMethods: []string{"get"},
+			AllowHTTPMethods: []string{"post"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
