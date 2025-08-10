@@ -21,7 +21,7 @@ const (
 
 type GalleryBizService interface {
 	GetGalleryPage(id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO
-	SearchGallery(createDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO
+	SearchGallery(searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO
 	CreateGallery(createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
 	UpdateGallery(id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer)
 	DeleteGallery(id int64, tx ...orm.TxOrmer) (string, int)
@@ -62,19 +62,19 @@ func (impl *GalleryBizServiceImpl) GetGalleryPage(id int64, tx ...orm.TxOrmer) g
 	}
 }
 
-func (impl *GalleryBizServiceImpl) SearchGallery(createDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO {
+func (impl *GalleryBizServiceImpl) SearchGallery(searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO {
 	// 读取数据库
 	var galleryDOList []*galleryDO.GalleryDO
-	if createDTO.Keyword == "" {
+	if searchDTO.Keyword == "" {
 		doList, err := impl.galleryMapper.SelectAllLimit(200, tx...)
 		if err != nil {
 			panic(errors.WrapError(err, "select all Gallery error"))
 		}
 		galleryDOList = append(galleryDOList, doList...)
 	} else {
-		doList, err := impl.galleryMapper.SelectByKeyword(createDTO.Keyword)
+		doList, err := impl.galleryMapper.SelectByKeyword(searchDTO.Keyword)
 		if err != nil {
-			panic(errors.WrapError(err, fmt.Sprintf("select Gallery by keyword [%s] error", createDTO.Keyword)))
+			panic(errors.WrapError(err, fmt.Sprintf("select Gallery by keyword [%s] error", searchDTO.Keyword)))
 		}
 		galleryDOList = append(galleryDOList, doList...)
 	}
@@ -85,10 +85,10 @@ func (impl *GalleryBizServiceImpl) SearchGallery(createDTO galleryDTO.GallerySea
 		if do.PermissionLevel == enum.PermissionForbidden || do.PermissionLevel == enum.PermissionPrivate {
 			continue
 		}
-		if !sets.NewInt64(do.Actors...).HasAll(createDTO.Actors...) {
+		if !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
 			continue
 		}
-		if !sets.NewString(do.Tags...).HasAll(createDTO.Tags...) {
+		if !sets.NewString(do.Tags...).HasAll(searchDTO.Tags...) {
 			continue
 		}
 

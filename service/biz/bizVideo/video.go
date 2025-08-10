@@ -26,7 +26,7 @@ const (
 
 type VideoBizService interface {
 	GetVideoPage(id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
-	SearchVideo(createDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
+	SearchVideo(searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
 	CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
 	UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer)
 	DeleteVideo(id int64, tx ...orm.TxOrmer) (string, string)
@@ -70,19 +70,19 @@ func (impl *VideoBizServiceImpl) GetVideoPage(id int64, tx ...orm.TxOrmer) video
 	}
 }
 
-func (impl *VideoBizServiceImpl) SearchVideo(createDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
+func (impl *VideoBizServiceImpl) SearchVideo(searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
 	// 读取数据库
 	var videoDOList []*videoDO.VideoDO
-	if createDTO.Keyword == "" {
+	if searchDTO.Keyword == "" {
 		doList, err := impl.videoMapper.SelectAllLimit(200, tx...)
 		if err != nil {
 			panic(errors.WrapError(err, "select all video error"))
 		}
 		videoDOList = append(videoDOList, doList...)
 	} else {
-		doList, err := impl.videoMapper.SelectByKeyword(createDTO.Keyword)
+		doList, err := impl.videoMapper.SelectByKeyword(searchDTO.Keyword)
 		if err != nil {
-			panic(errors.WrapError(err, fmt.Sprintf("select video by keyword [%s] error", createDTO.Keyword)))
+			panic(errors.WrapError(err, fmt.Sprintf("select video by keyword [%s] error", searchDTO.Keyword)))
 		}
 		videoDOList = append(videoDOList, doList...)
 	}
@@ -93,10 +93,10 @@ func (impl *VideoBizServiceImpl) SearchVideo(createDTO videoDTO.VideoSearchDTO, 
 		if do.PermissionLevel == enum.PermissionForbidden || do.PermissionLevel == enum.PermissionPrivate {
 			continue
 		}
-		if !sets.NewInt64(do.Actors...).HasAll(createDTO.Actors...) {
+		if !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
 			continue
 		}
-		if !sets.NewString(do.Tags...).HasAll(createDTO.Tags...) {
+		if !sets.NewString(do.Tags...).HasAll(searchDTO.Tags...) {
 			continue
 		}
 
