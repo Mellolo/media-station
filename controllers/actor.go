@@ -10,6 +10,14 @@ type ActorController struct {
 	web.Controller
 }
 
+// @router search [get]
+func (c *ActorController) SearchActor() {
+	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
+		vo := facade.NewActorFacade().GetActorPage(&c.Controller)
+		return templates.NewJsonTemplate200(vo)
+	})
+}
+
 // @router page/:id [get]
 func (c *ActorController) Page() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {

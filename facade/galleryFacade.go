@@ -46,7 +46,6 @@ func (impl *GalleryFacade) SearchGallery(c *web.Controller) []galleryVO.GalleryI
 			voList = append(voList, galleryVO.GalleryItemVO{
 				Id:              item.Id,
 				Name:            item.Name,
-				CoverUrl:        item.CoverUrl,
 				PermissionLevel: item.PermissionLevel,
 			})
 		}
@@ -70,7 +69,6 @@ func (impl *GalleryFacade) GetGalleryPage(c *web.Controller) galleryVO.GalleryPa
 			Id:              page.Id,
 			Name:            page.Name,
 			Description:     page.Description,
-			CoverUrl:        page.CoverUrl,
 			PermissionLevel: page.PermissionLevel,
 		}
 	})

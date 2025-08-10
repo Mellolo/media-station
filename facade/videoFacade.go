@@ -46,7 +46,6 @@ func (impl *VideoFacade) SearchVideo(c *web.Controller) []videoVO.VideoItemVO {
 			voList = append(voList, videoVO.VideoItemVO{
 				Id:              item.Id,
 				Name:            item.Name,
-				CoverUrl:        item.CoverUrl,
 				PermissionLevel: item.PermissionLevel,
 			})
 		}
@@ -71,7 +70,6 @@ func (impl *VideoFacade) GetVideoPage(c *web.Controller) videoVO.VideoPageVO {
 			Name:            page.Name,
 			Description:     page.Description,
 			PermissionLevel: page.PermissionLevel,
-			CoverUrl:        page.CoverUrl,
 		}
 	})
 
