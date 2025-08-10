@@ -27,6 +27,7 @@ type ActorBizService interface {
 	RemoveLastCover(lastCoverUrl string)
 	RemoveArt(dto actorDTO.ActorRemoveArtDTO, tx ...orm.TxOrmer)
 	DeleteActor(id int64, tx ...orm.TxOrmer) string
+	SearchActor(dto actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorItemDTO
 }
 
 type ActorBizServiceImpl struct {
@@ -161,4 +162,33 @@ func (impl *ActorBizServiceImpl) DeleteActor(id int64, tx ...orm.TxOrmer) string
 		panic(errors.WrapError(err, fmt.Sprintf("delete actor [%d] failed", id)))
 	}
 	return actor.CoverUrl
+}
+
+func (impl *ActorBizServiceImpl) SearchActor(searchDTO actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorItemDTO {
+	// 读取数据库
+	var actorDOList []*actorDO.ActorDO
+	if searchDTO.Keyword == "" {
+		doList, err := impl.actorMapper.SelectAllLimit(200, tx...)
+		if err != nil {
+			panic(errors.WrapError(err, "select all Actor error"))
+		}
+		actorDOList = append(actorDOList, doList...)
+	} else {
+		doList, err := impl.actorMapper.SelectByKeyword(searchDTO.Keyword)
+		if err != nil {
+			panic(errors.WrapError(err, fmt.Sprintf("select Actor by keyword [%s] error", searchDTO.Keyword)))
+		}
+		actorDOList = append(actorDOList, doList...)
+	}
+
+	var actorItems []actorDTO.ActorItemDTO
+	for _, actor := range actorDOList {
+		actorItems = append(actorItems, actorDTO.ActorItemDTO{
+			Id:          actor.Id,
+			Name:        actor.Name,
+			Description: actor.Description,
+			CoverUrl:    actor.CoverUrl,
+		})
+	}
+	return actorItems
 }

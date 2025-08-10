@@ -114,6 +114,25 @@ func (impl *ActorFacade) CreateActor(c *web.Controller) int64 {
 	return id
 }
 
+func (impl *ActorFacade) SearchActor(c *web.Controller) []actorVO.ActorItemVO {
+	var dto actorDTO.ActorSearchDTO
+	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), &dto)
+
+	var voList []actorVO.ActorItemVO
+	db.DoTransaction(func(tx orm.TxOrmer) {
+		items := impl.actorBizService.SearchActor(dto, tx)
+
+		for _, item := range items {
+			voList = append(voList, actorVO.ActorItemVO{
+				Id:   item.Id,
+				Name: item.Name,
+			})
+		}
+	})
+
+	return voList
+}
+
 func (impl *ActorFacade) UpdateActor(c *web.Controller) {
 	// 名称
 	id, err := c.GetInt64("id")

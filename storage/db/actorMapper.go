@@ -11,6 +11,8 @@ import (
 type ActorMapper interface {
 	Insert(actor *actorDO.ActorDO, tx ...orm.TxOrmer) (int64, error)
 	SelectById(id int64, tx ...orm.TxOrmer) (*actorDO.ActorDO, error)
+	SelectAllLimit(limit int, tx ...orm.TxOrmer) ([]*actorDO.ActorDO, error)
+	SelectByKeyword(keyword string, tx ...orm.TxOrmer) ([]*actorDO.ActorDO, error)
 	Update(id int64, actor *actorDO.ActorDO, tx ...orm.TxOrmer) error
 	DeleteById(id int64, tx ...orm.TxOrmer) error
 }
@@ -58,6 +60,65 @@ func (impl *ActorMapperImpl) SelectById(id int64, tx ...orm.TxOrmer) (*actorDO.A
 		Art:         actorArt,
 	}
 	return do, nil
+}
+
+func (impl *ActorMapperImpl) SelectAllLimit(limit int, tx ...orm.TxOrmer) ([]*actorDO.ActorDO, error) {
+	executor := getQueryExecutor(tx...)
+
+	var records []actorDAO.ActorRecord
+
+	_, err := executor.QueryTable(actorDAO.TableActor).Limit(limit).All(&records)
+	if err != nil {
+		return nil, err
+	}
+
+	var actors []*actorDO.ActorDO
+	for _, record := range records {
+		var actorArt actorDO.ActorArtDO
+		jsonUtil.UnmarshalJsonString(record.Details, &actorArt)
+		do := &actorDO.ActorDO{
+			Id:          record.Id,
+			CreateAt:    record.CreatedAt.String(),
+			Name:        record.Name,
+			Description: record.Description,
+			Creator:     record.Creator,
+			CoverUrl:    record.CoverUrl,
+			Art:         actorArt,
+		}
+		actors = append(actors, do)
+	}
+
+	return actors, nil
+}
+
+func (impl *ActorMapperImpl) SelectByKeyword(keyword string, tx ...orm.TxOrmer) ([]*actorDO.ActorDO, error) {
+	executor := getQueryExecutor(tx...)
+
+	var records []actorDAO.ActorRecord
+	_, err := executor.QueryTable(actorDAO.TableActor).
+		Filter("name__icontains", keyword).
+		All(&records)
+	if err != nil {
+		return nil, err
+	}
+
+	var actors []*actorDO.ActorDO
+	for _, record := range records {
+		var actorArt actorDO.ActorArtDO
+		jsonUtil.UnmarshalJsonString(record.Details, &actorArt)
+		do := &actorDO.ActorDO{
+			Id:          record.Id,
+			CreateAt:    record.CreatedAt.String(),
+			Name:        record.Name,
+			Description: record.Description,
+			Creator:     record.Creator,
+			CoverUrl:    record.CoverUrl,
+			Art:         actorArt,
+		}
+		actors = append(actors, do)
+	}
+
+	return actors, nil
 }
 
 func (impl *ActorMapperImpl) Update(id int64, actor *actorDO.ActorDO, tx ...orm.TxOrmer) error {

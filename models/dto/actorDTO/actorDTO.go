@@ -14,6 +14,11 @@ type ActorCreateDTO struct {
 }
 
 // +k8s:deepcopy-gen=true
+type ActorSearchDTO struct {
+	Keyword string `json:"keyword"`
+}
+
+// +k8s:deepcopy-gen=true
 type ActorUpdateDTO struct {
 	Id          int64       `json:"id"`
 	Name        string      `json:"name"`
