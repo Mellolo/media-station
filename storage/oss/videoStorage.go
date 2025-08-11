@@ -84,6 +84,7 @@ func (impl *VideoStorageImpl) Upload(bucket, path string, file io.ReadCloser, si
 			}
 		}
 
+		logs.Info(fmt.Sprintf("video [%s] uploaded", path))
 		if ch != nil {
 			ch <- util.GetDoneProcessBarJsonString()
 		}
