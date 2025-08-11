@@ -93,10 +93,10 @@ func (impl *VideoBizServiceImpl) SearchVideo(searchDTO videoDTO.VideoSearchDTO, 
 		if do.PermissionLevel == enum.PermissionForbidden || do.PermissionLevel == enum.PermissionPrivate {
 			continue
 		}
-		if !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
+		if len(do.Actors) > 0 && !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
 			continue
 		}
-		if !sets.NewString(do.Tags...).HasAll(searchDTO.Tags...) {
+		if len(do.Tags) > 0 && !sets.NewString(do.Tags...).HasAll(searchDTO.Tags...) {
 			continue
 		}
 

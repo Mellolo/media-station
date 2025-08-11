@@ -10,7 +10,7 @@ type ActorController struct {
 	web.Controller
 }
 
-// @router search [post]
+// @router search [get]
 func (c *ActorController) SearchActor() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
 		voList := facade.NewActorFacade().SearchActor(&c.Controller)
