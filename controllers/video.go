@@ -49,22 +49,10 @@ type VideoAuthController struct {
 // @router upload [post]
 func (c *VideoAuthController) Upload() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
-		//upgrader := websocket.Upgrader{
-		//	CheckOrigin: func(r *http.Request) bool {
-		//		return true // 允许所有来源的连接，可加限制
-		//	},
-		//}
-		//conn, err := upgrader.Upgrade(c.Ctx.ResponseWriter, c.Ctx.Request, nil)
-		//if err != nil {
-		//	panic(errors.WrapError(err, "websocket error"))
-		//}
-
-		//ch := make(chan string, 100)
-
 		// 上传业务流程
 		go func() {
 			panicContext := errors.CatchPanic(func() {
-				facade.NewVideoFacade().UploadVideo(&c.Controller, nil)
+				facade.NewVideoFacade().UploadVideo(&c.Controller)
 			})
 			if panicContext.Err != nil {
 				uniqueId, _ := uuid.NewV7()
@@ -75,16 +63,6 @@ func (c *VideoAuthController) Upload() {
 					))
 			}
 		}()
-
-		//// 进度条
-		//go func() {
-		//	for str := range ch {
-		//		err = conn.WriteMessage(websocket.TextMessage, []byte(str))
-		//		if err != nil {
-		//			return
-		//		}
-		//	}
-		//}()
 
 		return templates.NewJsonTemplate200(nil)
 	})

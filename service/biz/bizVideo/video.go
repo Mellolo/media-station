@@ -27,7 +27,7 @@ const (
 type VideoBizService interface {
 	GetVideoPage(id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
 	SearchVideo(searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
-	CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
+	CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
 	UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer)
 	DeleteVideo(id int64, tx ...orm.TxOrmer) (string, string)
 	PlayVideo(id int64, rangeHeader ...string) videoDTO.VideoFileDTO
@@ -111,7 +111,7 @@ func (impl *VideoBizServiceImpl) SearchVideo(searchDTO videoDTO.VideoSearchDTO, 
 	return items
 }
 
-func (impl *VideoBizServiceImpl) CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64 {
+func (impl *VideoBizServiceImpl) CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64 {
 	if videoDTO.File == nil {
 		panic(errors.NewError("video file is empty"))
 	}
@@ -132,7 +132,7 @@ func (impl *VideoBizServiceImpl) CreateVideo(createDTO videoDTO.VideoCreateDTO, 
 	// 上传视频
 	filename := impl.idGenerator.GenerateId(videoIdGenerateKey)
 	path := fmt.Sprintf("videos/%s.mp4", filename)
-	impl.videoStorage.Upload(bucketVideo, path, videoDTO.File, videoDTO.Size, ch)
+	impl.videoStorage.Upload(bucketVideo, path, videoDTO.File, videoDTO.Size)
 	video.VideoUrl = path
 
 	// 上传封面

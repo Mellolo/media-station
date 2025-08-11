@@ -17,7 +17,7 @@ const (
 )
 
 type VideoStorage interface {
-	Upload(bucket, path string, file io.ReadCloser, size int64, ch chan string)
+	Upload(bucket, path string, file io.ReadCloser, size int64)
 	GetStreamURL(bucket, path string, expire time.Duration) string
 	Download(bucket, path string, rangeHeader ...string) videoDO.VideoFileDO
 	Remove(bucket, path string)
@@ -37,13 +37,7 @@ func NewVideoStorage() VideoStorage {
 	}
 }
 
-func (impl *VideoStorageImpl) Upload(bucket, path string, file io.ReadCloser, size int64, ch chan string) {
-	defer func() {
-		if ch != nil {
-			close(ch)
-		}
-	}()
-
+func (impl *VideoStorageImpl) Upload(bucket, path string, file io.ReadCloser, size int64) {
 	panicContext := errors.CatchPanic(func() {
 		err := impl.client.RemoveIncompleteUpload(bucket, path)
 		if err != nil {
@@ -67,11 +61,7 @@ func (impl *VideoStorageImpl) Upload(bucket, path string, file io.ReadCloser, si
 					PartNumber: partNumber,
 					ETag:       eTag,
 				})
-				logs.Info(fmt.Sprintf("video uploaded part %d, ETag: %s", partNumber, eTag))
-
-				if ch != nil {
-					ch <- util.GetProcessBarJsonString(float64(partNumber) / float64(partNum))
-				}
+				logs.Info(fmt.Sprintf("video [%s] uploaded part %d, ETag: %s", path, partNumber, eTag))
 			}
 			err = impl.client.CompleteMultipartUpload(bucket, path, uploadID, parts)
 			if err != nil {
@@ -85,13 +75,9 @@ func (impl *VideoStorageImpl) Upload(bucket, path string, file io.ReadCloser, si
 		}
 
 		logs.Info(fmt.Sprintf("video [%s] uploaded", path))
-		if ch != nil {
-			ch <- util.GetDoneProcessBarJsonString()
-		}
 	})
 
 	if panicContext.Err != nil {
-		ch <- util.GetFailedProcessBarJsonString()
 		uniqueId, _ := uuid.NewV7()
 		logs.Error(
 			fmt.Sprintf("upload video failed\n%s",

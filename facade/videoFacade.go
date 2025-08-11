@@ -85,7 +85,7 @@ func (impl *VideoFacade) GetVideoPage(c *web.Controller) videoVO.VideoPageVO {
 	return vo
 }
 
-func (impl *VideoFacade) UploadVideo(c *web.Controller, ch chan string) {
+func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 	// 名称
 	name := c.GetString("name", "")
 	// 描述
@@ -129,7 +129,7 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller, ch chan string) {
 
 	db.DoTransaction(func(tx orm.TxOrmer) {
 		// 创建视频
-		id := impl.videoBizService.CreateVideo(createDTO, videoFileDTO, ch)
+		id := impl.videoBizService.CreateVideo(createDTO, videoFileDTO)
 		// 更新actor作品
 		for _, actorId := range createDTO.Actors {
 			updateDTO := actorDTO.ActorUpdateDTO{
