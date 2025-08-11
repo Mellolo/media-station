@@ -6,6 +6,7 @@ import (
 	"github.com/beego/beego/v2/server/web"
 	"github.com/mellolo/common/errors"
 	"github.com/mellolo/common/utils/jsonUtil"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"media-station/controllers/filters"
 	"media-station/models/dto/actorDTO"
 	"media-station/models/dto/fileDTO"
@@ -40,11 +41,11 @@ func (impl *GalleryFacade) SearchGallery(c *web.Controller) []galleryVO.GalleryI
 	// 演员
 	var actors []int64
 	jsonUtil.UnmarshalJsonString(c.GetString("actors", "[]"), &actors)
-	searchDTO.Actors = actors
+	searchDTO.Actors = sets.NewInt64(actors...).List()
 	// tag
 	var tags []string
 	jsonUtil.UnmarshalJsonString(c.GetString("tags", "[]"), &tags)
-	searchDTO.Tags = tags
+	searchDTO.Tags = sets.NewString(tags...).List()
 
 	var voList []galleryVO.GalleryItemVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
@@ -92,9 +93,11 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller, ch chan string) {
 	// 演员
 	var actors []int64
 	jsonUtil.UnmarshalJsonString(c.GetString("actors", "[]"), &actors)
-	// tag
+	actors = sets.NewInt64(actors...).List()
+	// tags
 	var tags []string
 	jsonUtil.UnmarshalJsonString(c.GetString("tags", "[]"), &tags)
+	tags = sets.NewString(tags...).List()
 	// 用户
 	uploader := ""
 	if claim, ok := c.Ctx.Input.GetData(filters.ContextClaim).(string); ok {
