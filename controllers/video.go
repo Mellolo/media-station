@@ -59,12 +59,12 @@ func (c *VideoAuthController) Upload() {
 		//	panic(errors.WrapError(err, "websocket error"))
 		//}
 
-		ch := make(chan string, 100)
+		//ch := make(chan string, 100)
 
 		// 上传业务流程
 		go func() {
 			panicContext := errors.CatchPanic(func() {
-				facade.NewVideoFacade().UploadVideo(&c.Controller, ch)
+				facade.NewVideoFacade().UploadVideo(&c.Controller, nil)
 			})
 			if panicContext.Err != nil {
 				uniqueId, _ := uuid.NewV7()
