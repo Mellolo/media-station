@@ -34,6 +34,9 @@ func (c *VideoController) Page() {
 // @router play/:id [get]
 func (c *VideoController) Play() {
 	templates.ServeVideoTemplate(c.Ctx, func() templates.VideoTemplate {
+		// todo Token
+		token := c.GetString("token", "")
+		logs.Info(token)
 		vo := facade.NewVideoFacade().PlayVideo(&c.Controller)
 		return templates.VideoTemplate{
 			Reader: vo.Reader,
@@ -68,13 +71,13 @@ func (c *VideoAuthController) Upload() {
 	})
 }
 
-// @router play/:id [get]
-func (c *VideoAuthController) Play() {
-	templates.ServeVideoTemplate(c.Ctx, func() templates.VideoTemplate {
-		vo := facade.NewVideoFacade().PlayVideo(&c.Controller)
-		return templates.VideoTemplate{
-			Reader: vo.Reader,
-			Header: vo.Header,
-		}
-	})
-}
+//// @router play/:id [get]
+//func (c *VideoAuthController) Play() {
+//	templates.ServeVideoTemplate(c.Ctx, func() templates.VideoTemplate {
+//		vo := facade.NewVideoFacade().PlayVideo(&c.Controller)
+//		return templates.VideoTemplate{
+//			Reader: vo.Reader,
+//			Header: vo.Header,
+//		}
+//	})
+//}
