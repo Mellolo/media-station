@@ -74,10 +74,20 @@ func (impl *VideoFacade) GetVideoPage(c *web.Controller) videoVO.VideoPageVO {
 	var vo videoVO.VideoPageVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
 		page := impl.videoBizService.GetVideoPage(id, tx)
+		var actors []videoVO.VideoActorVO
+		for _, actorId := range page.Actors {
+			actorPage := impl.actorBizService.GetActorPage(actorId)
+			actors = append(actors, videoVO.VideoActorVO{
+				Id:   actorPage.Id,
+				Name: actorPage.Name,
+			})
+		}
 		vo = videoVO.VideoPageVO{
 			Id:              page.Id,
 			Name:            page.Name,
 			Description:     page.Description,
+			Actors:          actors,
+			Tags:            page.Tags,
 			PermissionLevel: page.PermissionLevel,
 		}
 	})
