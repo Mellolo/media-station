@@ -57,3 +57,8 @@ type VideoFileDTO struct {
 	Reader io.ReadCloser
 	Header http.Header
 }
+
+type VideoCoverDTO struct {
+	Reader io.ReadCloser
+	Header http.Header
+}

@@ -20,6 +20,7 @@ type VideoStorage interface {
 	Upload(bucket, path string, file io.ReadCloser, size int64)
 	GetStreamURL(bucket, path string, expire time.Duration) string
 	Download(bucket, path string, rangeHeader ...string) videoDO.VideoFileDO
+	GetCover(bucket, path string) videoDO.VideoCoverFileDO
 	Remove(bucket, path string)
 }
 
@@ -102,6 +103,18 @@ func (impl *VideoStorageImpl) Download(bucket, path string, rangeHeader ...strin
 	}
 
 	return videoDO.VideoFileDO{
+		Reader: reader,
+		Header: header,
+	}
+}
+
+func (impl *VideoStorageImpl) GetCover(bucket, path string) videoDO.VideoCoverFileDO {
+	reader, header, err := impl.client.GetObjectReader(bucket, path)
+	if err != nil {
+		panic(errors.WrapError(err, "get video cover failed"))
+	}
+
+	return videoDO.VideoCoverFileDO{
 		Reader: reader,
 		Header: header,
 	}

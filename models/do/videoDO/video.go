@@ -23,3 +23,8 @@ type VideoFileDO struct {
 	Reader io.ReadCloser
 	Header http.Header
 }
+
+type VideoCoverFileDO struct {
+	Reader io.ReadCloser
+	Header http.Header
+}

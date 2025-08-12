@@ -26,6 +26,7 @@ const (
 
 type VideoBizService interface {
 	GetVideoPage(id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
+	GetVideoCover(id int64, tx ...orm.TxOrmer) videoDTO.VideoCoverDTO
 	SearchVideo(searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
 	CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
 	UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer)
@@ -67,6 +68,19 @@ func (impl *VideoBizServiceImpl) GetVideoPage(id int64, tx ...orm.TxOrmer) video
 		CoverUrl:        video.CoverUrl,
 		VideoUrl:        video.VideoUrl,
 		PermissionLevel: video.PermissionLevel,
+	}
+}
+
+func (impl *VideoBizServiceImpl) GetVideoCover(id int64, tx ...orm.TxOrmer) videoDTO.VideoCoverDTO {
+	video, err := impl.videoMapper.SelectById(id, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("get video [%d] failed", id)))
+	}
+
+	cover := impl.videoStorage.GetCover(bucketVideo, video.CoverUrl)
+	return videoDTO.VideoCoverDTO{
+		Reader: cover.Reader,
+		Header: cover.Header,
 	}
 }
 

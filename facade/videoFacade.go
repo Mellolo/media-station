@@ -95,6 +95,26 @@ func (impl *VideoFacade) GetVideoPage(c *web.Controller) videoVO.VideoPageVO {
 	return vo
 }
 
+func (impl *VideoFacade) GetVideoCover(c *web.Controller) videoVO.VideoCoverFileVO {
+	// 获取演员ID
+	idStr := c.Ctx.Input.Param(":id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("param [id] %s is invalid", idStr)))
+	}
+
+	var vo videoVO.VideoCoverFileVO
+	db.DoTransaction(func(tx orm.TxOrmer) {
+		cover := impl.videoBizService.GetVideoCover(id)
+		vo = videoVO.VideoCoverFileVO{
+			Reader: cover.Reader,
+			Header: cover.Header,
+		}
+	})
+
+	return vo
+}
+
 func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 	// 名称
 	name := c.GetString("name", "")

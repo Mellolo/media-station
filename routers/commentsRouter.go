@@ -144,6 +144,15 @@ func init() {
 
 	beego.GlobalControllerRouter["media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoController"],
 		beego.ControllerComments{
+			Method:           "Cover",
+			Router:           `cover/:id`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoController"],
+		beego.ControllerComments{
 			Method:           "Page",
 			Router:           `page/:id`,
 			AllowHTTPMethods: []string{"get"},

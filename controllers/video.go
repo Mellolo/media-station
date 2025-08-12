@@ -31,6 +31,17 @@ func (c *VideoController) Page() {
 	})
 }
 
+// @router cover/:id [get]
+func (c *VideoController) Cover() {
+	templates.ServePictureTemplate(c.Ctx, func() templates.PictureTemplate {
+		vo := facade.NewVideoFacade().GetVideoCover(&c.Controller)
+		return templates.PictureTemplate{
+			Reader: vo.Reader,
+			Header: vo.Header,
+		}
+	})
+}
+
 // @router play/:id [get]
 func (c *VideoController) Play() {
 	templates.ServeVideoTemplate(c.Ctx, func() templates.VideoTemplate {
