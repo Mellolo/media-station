@@ -34,10 +34,11 @@ type VideoSearchDTO struct {
 
 // +k8s:deepcopy-gen=true
 type VideoItemDTO struct {
-	Id              int64  `json:"id"`
-	Name            string `json:"name"`
-	CoverUrl        string `json:"coverUrl"`
-	PermissionLevel string `json:"permissionLevel"`
+	Id              int64   `json:"id"`
+	Name            string  `json:"name"`
+	CoverUrl        string  `json:"coverUrl"`
+	Duration        float64 `json:"duration"`
+	PermissionLevel string  `json:"permissionLevel"`
 }
 
 // +k8s:deepcopy-gen=true

@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/beego/beego/v2/client/orm"
+	"github.com/beego/beego/v2/core/logs"
 	"github.com/mellolo/common/errors"
-	"github.com/mellolo/common/utils/snapshotUtil"
+	"github.com/mellolo/common/utils/videoUtil"
 	"io"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"media-station/enum"
@@ -13,6 +14,7 @@ import (
 	"media-station/models/do/videoDO"
 	"media-station/models/dto/fileDTO"
 	"media-station/models/dto/videoDTO"
+	"media-station/storage/cache"
 	"media-station/storage/db"
 	"media-station/storage/oss"
 	"time"
@@ -22,6 +24,7 @@ const (
 	videoIdGenerateKey      = "video"
 	videoCoverIdGenerateKey = "videoCover"
 	bucketVideo             = "video"
+	videoDurationCacheKey   = "videoDuration"
 )
 
 type VideoBizService interface {
@@ -39,18 +42,20 @@ type VideoBizService interface {
 
 func NewVideoBizService() *VideoBizServiceImpl {
 	return &VideoBizServiceImpl{
-		videoMapper:    db.NewVideoMapper(),
-		idGenerator:    generator.NewIdGenerator(),
-		pictureStorage: oss.NewPictureStorage(),
-		videoStorage:   oss.NewVideoStorage(),
+		videoMapper:      db.NewVideoMapper(),
+		idGenerator:      generator.NewIdGenerator(),
+		pictureStorage:   oss.NewPictureStorage(),
+		videoStorage:     oss.NewVideoStorage(),
+		distributedCache: cache.NewDistributedCache(),
 	}
 }
 
 type VideoBizServiceImpl struct {
-	videoMapper    db.VideoMapper
-	idGenerator    generator.IdGenerator
-	pictureStorage oss.PictureStorage
-	videoStorage   oss.VideoStorage
+	videoMapper      db.VideoMapper
+	idGenerator      generator.IdGenerator
+	pictureStorage   oss.PictureStorage
+	videoStorage     oss.VideoStorage
+	distributedCache cache.DistributedCache
 }
 
 func (impl *VideoBizServiceImpl) GetVideoPage(id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO {
@@ -118,6 +123,7 @@ func (impl *VideoBizServiceImpl) SearchVideo(searchDTO videoDTO.VideoSearchDTO, 
 			Id:              do.Id,
 			Name:            do.Name,
 			CoverUrl:        do.CoverUrl,
+			Duration:        impl.getVideoDuration(do.Id, do.VideoUrl),
 			PermissionLevel: do.PermissionLevel,
 		})
 	}
@@ -153,7 +159,7 @@ func (impl *VideoBizServiceImpl) CreateVideo(createDTO videoDTO.VideoCreateDTO, 
 	url := impl.videoStorage.GetStreamURL(bucketVideo, path, 3*time.Minute)
 	filename = impl.idGenerator.GenerateId(videoCoverIdGenerateKey)
 	path = fmt.Sprintf("covers/%s.jpg", filename)
-	data, err := snapshotUtil.CaptureScreenshotFromStreamURL(url)
+	data, err := videoUtil.CaptureScreenshotFromStreamURL(url)
 	impl.pictureStorage.Upload(bucketVideo, path, io.NopCloser(bytes.NewReader(data)), int64(len(data)))
 	video.CoverUrl = path
 
@@ -225,4 +231,23 @@ func (impl *VideoBizServiceImpl) RemoveVideoCover(path string) {
 
 func (impl *VideoBizServiceImpl) RemoveVideoFile(path string) {
 	impl.videoStorage.Remove(bucketVideo, path)
+}
+
+func (impl *VideoBizServiceImpl) getVideoDuration(id int64, videoPath string) float64 {
+	val, getErr := impl.distributedCache.Get(fmt.Sprintf("%s|%d", videoDurationCacheKey, id))
+	if getErr != nil {
+		logs.Error(fmt.Sprintf("error get video duration: %v", getErr))
+	}
+	if seconds, ok := val.(float64); ok {
+		return seconds
+	}
+	seconds, err := videoUtil.GetVideoDuration(impl.videoStorage.GetStreamURL(bucketVideo, videoPath, time.Minute))
+	if err == nil {
+		setErr := impl.distributedCache.Set(fmt.Sprintf("%s|%d", videoDurationCacheKey, id), seconds, time.Hour)
+		if setErr != nil {
+			logs.Error(fmt.Sprintf("error set video duration: %v", setErr))
+		}
+	}
+
+	return seconds
 }

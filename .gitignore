@@ -3,3 +3,4 @@
 /.run
 *.DS_Store
 /logs
+/cache
