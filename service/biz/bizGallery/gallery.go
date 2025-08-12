@@ -8,9 +8,11 @@ import (
 	"media-station/enum"
 	"media-station/generator"
 	"media-station/models/do/galleryDO"
+	"media-station/models/do/userDO"
 	"media-station/models/dto/contextDTO"
 	"media-station/models/dto/fileDTO"
 	"media-station/models/dto/galleryDTO"
+	"media-station/service/domain/domainPermission"
 	"media-station/storage/db"
 	"media-station/storage/oss"
 )
@@ -33,16 +35,21 @@ type GalleryBizService interface {
 
 func NewGalleryBizService() *GalleryBizServiceImpl {
 	return &GalleryBizServiceImpl{
-		galleryMapper:  db.NewGalleryMapper(),
-		idGenerator:    generator.NewIdGenerator(),
-		pictureStorage: oss.NewPictureStorage(),
+		userMapper:              db.NewUserMapper(),
+		galleryMapper:           db.NewGalleryMapper(),
+		idGenerator:             generator.NewIdGenerator(),
+		pictureStorage:          oss.NewPictureStorage(),
+		permissionDomainService: domainPermission.NewPermissionDomainService(),
 	}
 }
 
 type GalleryBizServiceImpl struct {
+	userMapper     db.UserMapper
 	galleryMapper  db.GalleryMapper
 	idGenerator    generator.IdGenerator
 	pictureStorage oss.PictureStorage
+
+	permissionDomainService domainPermission.PermissionDomainService
 }
 
 func (impl *GalleryBizServiceImpl) GetGalleryPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO {
@@ -80,10 +87,14 @@ func (impl *GalleryBizServiceImpl) SearchGallery(ctx contextDTO.ContextDTO, sear
 		galleryDOList = append(galleryDOList, doList...)
 	}
 
+	var user = new(userDO.UserDO)
+	if ctx.UserClaim.Username != "" {
+		user, _ = impl.userMapper.SelectByUsername(ctx.UserClaim.Username, tx...)
+	}
 	// 再筛选，并转化为DTO
 	var items []galleryDTO.GalleryItemDTO
 	for _, do := range galleryDOList {
-		if do.PermissionLevel == enum.PermissionForbidden || do.PermissionLevel == enum.PermissionPrivate {
+		if impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
 			continue
 		}
 		if len(searchDTO.Actors) > 0 && !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {

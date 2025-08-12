@@ -11,10 +11,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"media-station/enum"
 	"media-station/generator"
+	"media-station/models/do/userDO"
 	"media-station/models/do/videoDO"
 	"media-station/models/dto/contextDTO"
 	"media-station/models/dto/fileDTO"
 	"media-station/models/dto/videoDTO"
+	"media-station/service/domain/domainPermission"
 	"media-station/storage/cache"
 	"media-station/storage/db"
 	"media-station/storage/oss"
@@ -46,17 +48,20 @@ type VideoBizService interface {
 
 func NewVideoBizService() *VideoBizServiceImpl {
 	return &VideoBizServiceImpl{
-		actorMapper:      db.NewActorMapper(),
-		tagMapper:        db.NewTagMapper(),
-		videoMapper:      db.NewVideoMapper(),
-		idGenerator:      generator.NewIdGenerator(),
-		pictureStorage:   oss.NewPictureStorage(),
-		videoStorage:     oss.NewVideoStorage(),
-		distributedCache: cache.NewDistributedCache(),
+		userMapper:              db.NewUserMapper(),
+		actorMapper:             db.NewActorMapper(),
+		tagMapper:               db.NewTagMapper(),
+		videoMapper:             db.NewVideoMapper(),
+		idGenerator:             generator.NewIdGenerator(),
+		pictureStorage:          oss.NewPictureStorage(),
+		videoStorage:            oss.NewVideoStorage(),
+		distributedCache:        cache.NewDistributedCache(),
+		permissionDomainService: domainPermission.NewPermissionDomainService(),
 	}
 }
 
 type VideoBizServiceImpl struct {
+	userMapper       db.UserMapper
 	actorMapper      db.ActorMapper
 	tagMapper        db.TagMapper
 	videoMapper      db.VideoMapper
@@ -64,6 +69,8 @@ type VideoBizServiceImpl struct {
 	pictureStorage   oss.PictureStorage
 	videoStorage     oss.VideoStorage
 	distributedCache cache.DistributedCache
+
+	permissionDomainService domainPermission.PermissionDomainService
 }
 
 func (impl *VideoBizServiceImpl) GetVideoPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO {
@@ -115,9 +122,13 @@ func (impl *VideoBizServiceImpl) SearchVideo(ctx contextDTO.ContextDTO, searchDT
 	}
 
 	// 再筛选，并转化为DTO
+	var user = new(userDO.UserDO)
+	if ctx.UserClaim.Username != "" {
+		user, _ = impl.userMapper.SelectByUsername(ctx.UserClaim.Username, tx...)
+	}
 	var items []videoDTO.VideoItemDTO
 	for _, do := range videoDOList {
-		if do.PermissionLevel == enum.PermissionForbidden || do.PermissionLevel == enum.PermissionPrivate {
+		if impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
 			continue
 		}
 		if len(searchDTO.Actors) > 0 && !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
@@ -146,6 +157,11 @@ func (impl *VideoBizServiceImpl) SearchVideoByActor(ctx contextDTO.ContextDTO, a
 		return []videoDTO.VideoItemDTO{}
 	}
 
+	var user = new(userDO.UserDO)
+	if ctx.UserClaim.Username != "" {
+		user, _ = impl.userMapper.SelectByUsername(ctx.UserClaim.Username, tx...)
+	}
+	// 筛选，并转化为DTO
 	var items []videoDTO.VideoItemDTO
 	for _, videoId := range actor.Art.VideoIds {
 		do, videoErr := impl.videoMapper.SelectById(videoId, tx...)
@@ -156,7 +172,7 @@ func (impl *VideoBizServiceImpl) SearchVideoByActor(ctx contextDTO.ContextDTO, a
 			continue
 		}
 
-		if do.PermissionLevel == enum.PermissionForbidden || do.PermissionLevel == enum.PermissionPrivate {
+		if impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
 			continue
 		}
 
@@ -179,6 +195,11 @@ func (impl *VideoBizServiceImpl) SearchVideoByTag(ctx contextDTO.ContextDTO, tag
 		return []videoDTO.VideoItemDTO{}
 	}
 
+	var user = new(userDO.UserDO)
+	if ctx.UserClaim.Username != "" {
+		user, _ = impl.userMapper.SelectByUsername(ctx.UserClaim.Username, tx...)
+	}
+	// 筛选，并转化为DTO
 	var items []videoDTO.VideoItemDTO
 	for _, videoId := range tag.Art.VideoIds {
 		do, videoErr := impl.videoMapper.SelectById(videoId, tx...)
@@ -189,7 +210,7 @@ func (impl *VideoBizServiceImpl) SearchVideoByTag(ctx contextDTO.ContextDTO, tag
 			continue
 		}
 
-		if do.PermissionLevel == enum.PermissionForbidden || do.PermissionLevel == enum.PermissionPrivate {
+		if impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
 			continue
 		}
 
