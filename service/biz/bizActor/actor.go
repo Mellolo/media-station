@@ -9,6 +9,7 @@ import (
 	"media-station/generator"
 	"media-station/models/do/actorDO"
 	"media-station/models/dto/actorDTO"
+	"media-station/models/dto/contextDTO"
 	"media-station/models/dto/fileDTO"
 	"media-station/storage/db"
 	"media-station/storage/oss"
@@ -20,14 +21,14 @@ const (
 )
 
 type ActorBizService interface {
-	GetActorPage(id int64, tx ...orm.TxOrmer) actorDTO.ActorPageDTO
-	GetActorCover(id int64, tx ...orm.TxOrmer) actorDTO.ActorCoverFileDTO
-	CreateActor(createDTO actorDTO.ActorCreateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
-	UpdateActor(id int64, updateDTO actorDTO.ActorUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) string
-	RemoveLastCover(lastCoverUrl string)
-	RemoveArt(dto actorDTO.ActorRemoveArtDTO, tx ...orm.TxOrmer)
-	DeleteActor(id int64, tx ...orm.TxOrmer) string
-	SearchActor(dto actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorItemDTO
+	GetActorPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorPageDTO
+	GetActorCover(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorCoverFileDTO
+	CreateActor(ctx contextDTO.ContextDTO, createDTO actorDTO.ActorCreateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
+	UpdateActor(ctx contextDTO.ContextDTO, id int64, updateDTO actorDTO.ActorUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) string
+	RemoveLastCover(ctx contextDTO.ContextDTO, lastCoverUrl string)
+	RemoveArt(ctx contextDTO.ContextDTO, dto actorDTO.ActorRemoveArtDTO, tx ...orm.TxOrmer)
+	DeleteActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) string
+	SearchActor(ctx contextDTO.ContextDTO, dto actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorItemDTO
 }
 
 type ActorBizServiceImpl struct {
@@ -44,7 +45,7 @@ func NewActorBizService() *ActorBizServiceImpl {
 	}
 }
 
-func (impl *ActorBizServiceImpl) GetActorPage(id int64, tx ...orm.TxOrmer) actorDTO.ActorPageDTO {
+func (impl *ActorBizServiceImpl) GetActorPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorPageDTO {
 	actor, err := impl.actorMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("get actor [%d] failed", id)))
@@ -63,7 +64,7 @@ func (impl *ActorBizServiceImpl) GetActorPage(id int64, tx ...orm.TxOrmer) actor
 	}
 }
 
-func (impl *ActorBizServiceImpl) GetActorCover(id int64, tx ...orm.TxOrmer) actorDTO.ActorCoverFileDTO {
+func (impl *ActorBizServiceImpl) GetActorCover(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorCoverFileDTO {
 	actor, err := impl.actorMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("get actor [%d] failed", id)))
@@ -76,7 +77,7 @@ func (impl *ActorBizServiceImpl) GetActorCover(id int64, tx ...orm.TxOrmer) acto
 	}
 }
 
-func (impl *ActorBizServiceImpl) CreateActor(createDTO actorDTO.ActorCreateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64 {
+func (impl *ActorBizServiceImpl) CreateActor(ctx contextDTO.ContextDTO, createDTO actorDTO.ActorCreateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64 {
 	actor := &actorDO.ActorDO{
 		Name:        createDTO.Name,
 		Description: createDTO.Description,
@@ -97,7 +98,7 @@ func (impl *ActorBizServiceImpl) CreateActor(createDTO actorDTO.ActorCreateDTO, 
 	return id
 }
 
-func (impl *ActorBizServiceImpl) UpdateActor(id int64, updateDTO actorDTO.ActorUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) string {
+func (impl *ActorBizServiceImpl) UpdateActor(ctx contextDTO.ContextDTO, id int64, updateDTO actorDTO.ActorUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) string {
 	actor, err := impl.actorMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("actor [%d] doesn't exist", id)))
@@ -135,11 +136,11 @@ func (impl *ActorBizServiceImpl) UpdateActor(id int64, updateDTO actorDTO.ActorU
 	return lastCoverUrl
 }
 
-func (impl *ActorBizServiceImpl) RemoveLastCover(lastCoverUrl string) {
+func (impl *ActorBizServiceImpl) RemoveLastCover(ctx contextDTO.ContextDTO, lastCoverUrl string) {
 	impl.pictureStorage.Remove(bucketActor, lastCoverUrl)
 }
 
-func (impl *ActorBizServiceImpl) RemoveArt(dto actorDTO.ActorRemoveArtDTO, tx ...orm.TxOrmer) {
+func (impl *ActorBizServiceImpl) RemoveArt(ctx contextDTO.ContextDTO, dto actorDTO.ActorRemoveArtDTO, tx ...orm.TxOrmer) {
 	actor, err := impl.actorMapper.SelectById(dto.Id, tx...)
 	if err != nil && !pkgErrors.Is(err, orm.ErrNoRows) {
 		panic(errors.WrapError(err, "select actor failed"))
@@ -152,7 +153,7 @@ func (impl *ActorBizServiceImpl) RemoveArt(dto actorDTO.ActorRemoveArtDTO, tx ..
 	}
 }
 
-func (impl *ActorBizServiceImpl) DeleteActor(id int64, tx ...orm.TxOrmer) string {
+func (impl *ActorBizServiceImpl) DeleteActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) string {
 	actor, err := impl.actorMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("actor [%d] doesn't exist", id)))
@@ -164,7 +165,7 @@ func (impl *ActorBizServiceImpl) DeleteActor(id int64, tx ...orm.TxOrmer) string
 	return actor.CoverUrl
 }
 
-func (impl *ActorBizServiceImpl) SearchActor(searchDTO actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorItemDTO {
+func (impl *ActorBizServiceImpl) SearchActor(ctx contextDTO.ContextDTO, searchDTO actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorItemDTO {
 	// 读取数据库
 	var actorDOList []*actorDO.ActorDO
 	if searchDTO.Keyword == "" {

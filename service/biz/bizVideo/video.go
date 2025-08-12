@@ -12,6 +12,7 @@ import (
 	"media-station/enum"
 	"media-station/generator"
 	"media-station/models/do/videoDO"
+	"media-station/models/dto/contextDTO"
 	"media-station/models/dto/fileDTO"
 	"media-station/models/dto/videoDTO"
 	"media-station/storage/cache"
@@ -29,18 +30,18 @@ const (
 )
 
 type VideoBizService interface {
-	GetVideoPage(id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
-	GetVideoCover(id int64, tx ...orm.TxOrmer) videoDTO.VideoCoverDTO
-	SearchVideo(searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
-	SearchVideoByActor(actorId int64, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
-	SearchVideoByTag(tagName string, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
-	CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
-	UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer)
-	DeleteVideo(id int64, tx ...orm.TxOrmer) (string, string)
-	PlayVideo(id int64, rangeHeader ...string) videoDTO.VideoFileDTO
+	GetVideoPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
+	GetVideoCover(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoCoverDTO
+	SearchVideo(ctx contextDTO.ContextDTO, searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
+	SearchVideoByActor(ctx contextDTO.ContextDTO, actorId int64, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
+	SearchVideoByTag(ctx contextDTO.ContextDTO, tagName string, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
+	CreateVideo(ctx contextDTO.ContextDTO, createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
+	UpdateVideo(ctx contextDTO.ContextDTO, id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer)
+	DeleteVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) (string, string)
+	PlayVideo(ctx contextDTO.ContextDTO, id int64, rangeHeader ...string) videoDTO.VideoFileDTO
 
-	RemoveVideoCover(path string)
-	RemoveVideoFile(path string)
+	RemoveVideoCover(ctx contextDTO.ContextDTO, path string)
+	RemoveVideoFile(ctx contextDTO.ContextDTO, path string)
 }
 
 func NewVideoBizService() *VideoBizServiceImpl {
@@ -65,7 +66,7 @@ type VideoBizServiceImpl struct {
 	distributedCache cache.DistributedCache
 }
 
-func (impl *VideoBizServiceImpl) GetVideoPage(id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO {
+func (impl *VideoBizServiceImpl) GetVideoPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO {
 	video, err := impl.videoMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("get video [%d] failed", id)))
@@ -83,7 +84,7 @@ func (impl *VideoBizServiceImpl) GetVideoPage(id int64, tx ...orm.TxOrmer) video
 	}
 }
 
-func (impl *VideoBizServiceImpl) GetVideoCover(id int64, tx ...orm.TxOrmer) videoDTO.VideoCoverDTO {
+func (impl *VideoBizServiceImpl) GetVideoCover(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoCoverDTO {
 	video, err := impl.videoMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("get video [%d] failed", id)))
@@ -96,7 +97,7 @@ func (impl *VideoBizServiceImpl) GetVideoCover(id int64, tx ...orm.TxOrmer) vide
 	}
 }
 
-func (impl *VideoBizServiceImpl) SearchVideo(searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
+func (impl *VideoBizServiceImpl) SearchVideo(ctx contextDTO.ContextDTO, searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
 	// 读取数据库
 	var videoDOList []*videoDO.VideoDO
 	if searchDTO.Keyword == "" {
@@ -138,7 +139,7 @@ func (impl *VideoBizServiceImpl) SearchVideo(searchDTO videoDTO.VideoSearchDTO, 
 	return items
 }
 
-func (impl *VideoBizServiceImpl) SearchVideoByActor(actorId int64, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
+func (impl *VideoBizServiceImpl) SearchVideoByActor(ctx contextDTO.ContextDTO, actorId int64, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
 	actor, actorErr := impl.actorMapper.SelectById(actorId, tx...)
 	if actorErr != nil || actor == nil {
 		logs.Error("get actor [%d] failed", actorId) // 不报错，记录日志
@@ -171,7 +172,7 @@ func (impl *VideoBizServiceImpl) SearchVideoByActor(actorId int64, tx ...orm.TxO
 	return items
 }
 
-func (impl *VideoBizServiceImpl) SearchVideoByTag(tagName string, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
+func (impl *VideoBizServiceImpl) SearchVideoByTag(ctx contextDTO.ContextDTO, tagName string, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
 	tag, tagErr := impl.tagMapper.SelectByName(tagName, tx...)
 	if tagErr != nil || tag == nil {
 		logs.Error("get tag [%d] failed", tagName) // 不报错，记录日志
@@ -204,7 +205,7 @@ func (impl *VideoBizServiceImpl) SearchVideoByTag(tagName string, tx ...orm.TxOr
 	return items
 }
 
-func (impl *VideoBizServiceImpl) CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64 {
+func (impl *VideoBizServiceImpl) CreateVideo(ctx contextDTO.ContextDTO, createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64 {
 	if videoDTO.File == nil {
 		panic(errors.NewError("video file is empty"))
 	}
@@ -243,7 +244,7 @@ func (impl *VideoBizServiceImpl) CreateVideo(createDTO videoDTO.VideoCreateDTO, 
 	return id
 }
 
-func (impl *VideoBizServiceImpl) UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) {
+func (impl *VideoBizServiceImpl) UpdateVideo(ctx contextDTO.ContextDTO, id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) {
 	video, err := impl.videoMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
@@ -273,7 +274,7 @@ func (impl *VideoBizServiceImpl) UpdateVideo(id int64, updateDTO videoDTO.VideoU
 	}
 }
 
-func (impl *VideoBizServiceImpl) DeleteVideo(id int64, tx ...orm.TxOrmer) (string, string) {
+func (impl *VideoBizServiceImpl) DeleteVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) (string, string) {
 	video, err := impl.videoMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
@@ -286,7 +287,7 @@ func (impl *VideoBizServiceImpl) DeleteVideo(id int64, tx ...orm.TxOrmer) (strin
 	return video.CoverUrl, video.VideoUrl
 }
 
-func (impl *VideoBizServiceImpl) PlayVideo(id int64, rangeHeader ...string) videoDTO.VideoFileDTO {
+func (impl *VideoBizServiceImpl) PlayVideo(ctx contextDTO.ContextDTO, id int64, rangeHeader ...string) videoDTO.VideoFileDTO {
 	video, err := impl.videoMapper.SelectById(id)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
@@ -298,11 +299,11 @@ func (impl *VideoBizServiceImpl) PlayVideo(id int64, rangeHeader ...string) vide
 	}
 }
 
-func (impl *VideoBizServiceImpl) RemoveVideoCover(path string) {
+func (impl *VideoBizServiceImpl) RemoveVideoCover(ctx contextDTO.ContextDTO, path string) {
 	impl.pictureStorage.Remove(bucketVideo, path)
 }
 
-func (impl *VideoBizServiceImpl) RemoveVideoFile(path string) {
+func (impl *VideoBizServiceImpl) RemoveVideoFile(ctx contextDTO.ContextDTO, path string) {
 	impl.videoStorage.Remove(bucketVideo, path)
 }
 

@@ -8,16 +8,17 @@ import (
 	"github.com/mellolo/common/utils/jsonUtil"
 	"github.com/mellolo/common/utils/jwtUtil"
 	"media-station/models/do/userDO"
+	"media-station/models/dto/contextDTO"
 	"media-station/models/dto/userDTO"
 	"media-station/storage/db"
 	"time"
 )
 
 type UserBizService interface {
-	GetProfile(username string, tx ...orm.TxOrmer) userDTO.UserProfileDTO
-	Register(registerDTO userDTO.UserRegisterDTO, tx ...orm.TxOrmer)
-	Login(userLoginDTO userDTO.UserLoginDTO, tx ...orm.TxOrmer) string
-	Logout(token string)
+	GetProfile(ctx contextDTO.ContextDTO, username string, tx ...orm.TxOrmer) userDTO.UserProfileDTO
+	Register(ctx contextDTO.ContextDTO, registerDTO userDTO.UserRegisterDTO, tx ...orm.TxOrmer)
+	Login(ctx contextDTO.ContextDTO, userLoginDTO userDTO.UserLoginDTO, tx ...orm.TxOrmer) string
+	Logout(ctx contextDTO.ContextDTO, token string)
 }
 
 func NewUserBizService() *UserBizServiceImpl {
@@ -30,7 +31,7 @@ type UserBizServiceImpl struct {
 	userMapper db.UserMapper
 }
 
-func (impl UserBizServiceImpl) GetProfile(username string, tx ...orm.TxOrmer) userDTO.UserProfileDTO {
+func (impl UserBizServiceImpl) GetProfile(ctx contextDTO.ContextDTO, username string, tx ...orm.TxOrmer) userDTO.UserProfileDTO {
 	user, err := impl.userMapper.SelectByUsername(username, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, "get user profile failed"))
@@ -44,7 +45,7 @@ func (impl UserBizServiceImpl) GetProfile(username string, tx ...orm.TxOrmer) us
 	}
 }
 
-func (impl UserBizServiceImpl) Register(registerDTO userDTO.UserRegisterDTO, tx ...orm.TxOrmer) {
+func (impl UserBizServiceImpl) Register(ctx contextDTO.ContextDTO, registerDTO userDTO.UserRegisterDTO, tx ...orm.TxOrmer) {
 	_, err := impl.userMapper.Insert(&userDO.UserDO{
 		Username: registerDTO.Username,
 		Password: registerDTO.Password,
@@ -54,7 +55,7 @@ func (impl UserBizServiceImpl) Register(registerDTO userDTO.UserRegisterDTO, tx 
 	}
 }
 
-func (impl UserBizServiceImpl) Login(userLoginDTO userDTO.UserLoginDTO, tx ...orm.TxOrmer) string {
+func (impl UserBizServiceImpl) Login(ctx contextDTO.ContextDTO, userLoginDTO userDTO.UserLoginDTO, tx ...orm.TxOrmer) string {
 	userDo, err := impl.userMapper.SelectByUsername(userLoginDTO.Username, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, "user login failed"))
@@ -74,7 +75,7 @@ func (impl UserBizServiceImpl) Login(userLoginDTO userDTO.UserLoginDTO, tx ...or
 	return token
 }
 
-func (impl UserBizServiceImpl) Logout(token string) {
+func (impl UserBizServiceImpl) Logout(ctx contextDTO.ContextDTO, token string) {
 	client, _ := cache.GetCache()
 	data, _ := client.Get("userTokenBacklist")
 	if blacklistStr, ok := data.(string); ok {

@@ -1,27 +1,23 @@
 package facade
 
 import (
-	"fmt"
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/server/web"
 	"github.com/mellolo/common/errors"
-	"github.com/mellolo/common/utils/jsonUtil"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"media-station/controllers/filters"
 	"media-station/models/dto/actorDTO"
 	"media-station/models/dto/fileDTO"
 	"media-station/models/dto/galleryDTO"
 	"media-station/models/dto/tagDTO"
-	"media-station/models/dto/userDTO"
 	"media-station/models/vo/galleryVO"
 	"media-station/service/biz/bizActor"
 	"media-station/service/biz/bizGallery"
 	"media-station/service/biz/bizTag"
 	"media-station/storage/db"
-	"strconv"
 )
 
 type GalleryFacade struct {
+	AbstractFacade
 	galleryBizService bizGallery.GalleryBizService
 	actorBizService   bizActor.ActorBizService
 	tagBizService     bizTag.TagBizService
@@ -36,20 +32,26 @@ func NewGalleryFacade() *GalleryFacade {
 }
 
 func (impl *GalleryFacade) SearchGallery(c *web.Controller) []galleryVO.GalleryItemVO {
-	var searchDTO galleryDTO.GallerySearchDTO
-	searchDTO.Keyword = c.GetString("keyword", "")
+	// 上下文
+	ctx := impl.GetContext(c)
+	// 关键词
+	keyword := c.GetString("keyword", "")
 	// 演员
-	var actors []int64
-	jsonUtil.UnmarshalJsonString(c.GetString("actors", "[]"), &actors)
-	searchDTO.Actors = sets.NewInt64(actors...).List()
-	// tag
-	var tags []string
-	jsonUtil.UnmarshalJsonString(c.GetString("tags", "[]"), &tags)
-	searchDTO.Tags = sets.NewString(tags...).List()
+	actors := impl.GetStringAsInt64List(c, "actors")
+	actors = sets.NewInt64(actors...).List()
+	// tags
+	tags := impl.GetStringAsStringList(c, "tags")
+	tags = sets.NewString(tags...).List()
 
 	var voList []galleryVO.GalleryItemVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		items := impl.galleryBizService.SearchGallery(searchDTO, tx)
+		searchDTO := galleryDTO.GallerySearchDTO{
+			Keyword: keyword,
+			Actors:  actors,
+			Tags:    tags,
+		}
+
+		items := impl.galleryBizService.SearchGallery(ctx, searchDTO, tx)
 
 		for _, item := range items {
 			voList = append(voList, galleryVO.GalleryItemVO{
@@ -64,16 +66,14 @@ func (impl *GalleryFacade) SearchGallery(c *web.Controller) []galleryVO.GalleryI
 }
 
 func (impl *GalleryFacade) GetGalleryPage(c *web.Controller) galleryVO.GalleryPageVO {
+	// 上下文
+	ctx := impl.GetContext(c)
 	// id
-	idStr := c.Ctx.Input.Param(":id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		panic(errors.WrapError(err, "get videoId failed"))
-	}
+	id := impl.GetRestfulParamInt64(c, ":id")
 
 	var vo galleryVO.GalleryPageVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		page := impl.galleryBizService.GetGalleryPage(id, tx)
+		page := impl.galleryBizService.GetGalleryPage(ctx, id, tx)
 		vo = galleryVO.GalleryPageVO{
 			Id:              page.Id,
 			Name:            page.Name,
@@ -86,57 +86,53 @@ func (impl *GalleryFacade) GetGalleryPage(c *web.Controller) galleryVO.GalleryPa
 }
 
 func (impl *GalleryFacade) UploadGallery(c *web.Controller, ch chan string) {
+	// 上下文
+	ctx := impl.GetContext(c)
 	// 名称
 	name := c.GetString("name", "")
 	// 描述
 	description := c.GetString("description", "")
 	// 演员
-	var actors []int64
-	jsonUtil.UnmarshalJsonString(c.GetString("actors", "[]"), &actors)
+	actors := impl.GetStringAsInt64List(c, "actors")
 	actors = sets.NewInt64(actors...).List()
 	// tags
-	var tags []string
-	jsonUtil.UnmarshalJsonString(c.GetString("tags", "[]"), &tags)
+	tags := impl.GetStringAsStringList(c, "tags")
 	tags = sets.NewString(tags...).List()
-	// 用户
-	uploader := ""
-	if claim, ok := c.Ctx.Input.GetData(filters.ContextClaim).(string); ok {
-		var userClaim userDTO.UserClaimDTO
-		jsonUtil.UnmarshalJsonString(claim, &userClaim)
-		uploader = userClaim.Username
-	}
+	// 上传者
+	uploader := ctx.UserClaim.Username
 	// 权限
 	permissionLevel := c.GetString("permissionLevel", "")
-
-	createDTO := galleryDTO.GalleryCreateDTO{
-		Name:            name,
-		Description:     description,
-		Actors:          actors,
-		Tags:            tags,
-		Uploader:        uploader,
-		PermissionLevel: permissionLevel,
-	}
 
 	// 图片文件
 	headers, err := c.GetFiles("files")
 	if err != nil {
 		panic(errors.WrapError(err, "get gallery files failed"))
 	}
-	var galleryFileDTOList []fileDTO.FileDTO
-	for _, header := range headers {
-		file, fileErr := header.Open()
-		if fileErr != nil {
-			panic(errors.WrapError(fileErr, "open gallery file failed"))
-		}
-		galleryFileDTOList = append(galleryFileDTOList, fileDTO.FileDTO{
-			File: file,
-			Size: header.Size,
-		})
-	}
 
 	db.DoTransaction(func(tx orm.TxOrmer) {
+		createDTO := galleryDTO.GalleryCreateDTO{
+			Name:            name,
+			Description:     description,
+			Actors:          actors,
+			Tags:            tags,
+			Uploader:        uploader,
+			PermissionLevel: permissionLevel,
+		}
+
+		var galleryFileDTOList []fileDTO.FileDTO
+		for _, header := range headers {
+			file, fileErr := header.Open()
+			if fileErr != nil {
+				panic(errors.WrapError(fileErr, "open gallery file failed"))
+			}
+			galleryFileDTOList = append(galleryFileDTOList, fileDTO.FileDTO{
+				File: file,
+				Size: header.Size,
+			})
+		}
+
 		// 创建图集
-		id := impl.galleryBizService.CreateGallery(createDTO, galleryFileDTOList, ch)
+		id := impl.galleryBizService.CreateGallery(ctx, createDTO, galleryFileDTOList, ch)
 		// 更新演员作品
 		for _, actorId := range createDTO.Actors {
 			updateDTO := actorDTO.ActorUpdateDTO{
@@ -145,7 +141,7 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller, ch chan string) {
 					GalleryIds: []int64{id},
 				},
 			}
-			impl.actorBizService.UpdateActor(actorId, updateDTO, fileDTO.FileDTO{}, tx)
+			impl.actorBizService.UpdateActor(ctx, actorId, updateDTO, fileDTO.FileDTO{}, tx)
 		}
 		// 更新tag作品
 		for _, tagName := range createDTO.Tags {
@@ -155,24 +151,20 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller, ch chan string) {
 					GalleryIds: []int64{id},
 				},
 			}
-			impl.tagBizService.CreateOrUpdateTag(tag, tx)
+			impl.tagBizService.CreateOrUpdateTag(ctx, tag, tx)
 		}
 	})
 }
 
 func (impl *GalleryFacade) ShowPage(c *web.Controller) galleryVO.GalleryFileVO {
-	idStr := c.Ctx.Input.Param(":id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("param [id] %s is invalid", idStr)))
-	}
-	pageStr := c.Ctx.Input.Param(":page")
-	page, err := strconv.Atoi(pageStr)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("param [page] %s is invalid", pageStr)))
-	}
+	// 上下文
+	ctx := impl.GetContext(c)
+	// id
+	id := impl.GetRestfulParamInt64(c, ":id")
+	// 页数
+	page := impl.GetRestfulParamInt(c, ":page")
 
-	dto := impl.galleryBizService.ShowGalleryPage(id, page)
+	dto := impl.galleryBizService.ShowGalleryPage(ctx, id, page)
 
 	return galleryVO.GalleryFileVO{
 		Header: dto.Header,

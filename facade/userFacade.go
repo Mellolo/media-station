@@ -8,7 +8,7 @@ import (
 	"github.com/mellolo/common/utils/jsonUtil"
 	"github.com/mellolo/common/utils/jwtUtil"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"media-station/controllers/filters"
+	"media-station/models/dto/contextDTO"
 	"media-station/models/dto/userDTO"
 	"media-station/models/vo/userVO"
 	"media-station/service/biz/bizUser"
@@ -16,6 +16,7 @@ import (
 )
 
 type UserFacade struct {
+	AbstractFacade
 	userBizService bizUser.UserBizService
 }
 
@@ -26,19 +27,27 @@ func NewUserFacade() *UserFacade {
 }
 
 func (impl *UserFacade) Register(c *web.Controller) {
+	// 上下文
+	ctx := impl.GetContext(c)
+
 	var dto userDTO.UserRegisterDTO
 	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), &dto)
+
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		impl.userBizService.Register(dto, tx)
+		impl.userBizService.Register(ctx, dto, tx)
 	})
 }
 
 func (impl *UserFacade) Login(c *web.Controller) string {
+	// 上下文
+	ctx := impl.GetContext(c)
+
 	var dto userDTO.UserLoginDTO
 	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), &dto)
+
 	var token string
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		token = impl.userBizService.Login(dto, tx)
+		token = impl.userBizService.Login(ctx, dto, tx)
 	})
 	return token
 }
@@ -76,20 +85,17 @@ func (impl *UserFacade) LoginStatus(c *web.Controller) (userVO.UserStatusProfile
 
 func (impl *UserFacade) Logout(token string) {
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		impl.userBizService.Logout(token)
+		impl.userBizService.Logout(contextDTO.ContextDTO{}, token)
 	})
 }
 
 func (impl *UserFacade) GetProfile(c *web.Controller) userVO.UserProfileVO {
-	username := ""
-	if claim, ok := c.Ctx.Input.GetData(filters.ContextClaim).(string); ok {
-		var userClaim userDTO.UserClaimDTO
-		jsonUtil.UnmarshalJsonString(claim, &userClaim)
-		username = userClaim.Username
-	}
+	// 上下文
+	ctx := impl.GetContext(c)
+
 	var profile userDTO.UserProfileDTO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		profile = impl.userBizService.GetProfile(username, tx)
+		profile = impl.userBizService.GetProfile(ctx, ctx.UserClaim.Username, tx)
 	})
 
 	return userVO.UserProfileVO{

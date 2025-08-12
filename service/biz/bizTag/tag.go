@@ -7,14 +7,15 @@ import (
 	pkgErrors "github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"media-station/models/do/tagDO"
+	"media-station/models/dto/contextDTO"
 	"media-station/models/dto/tagDTO"
 	"media-station/storage/db"
 )
 
 type TagBizService interface {
-	CreateOrUpdateTag(dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer)
-	RemoveArt(dto tagDTO.TagRemoveArtDTO, tx ...orm.TxOrmer)
-	DeleteTag(tagName string, tx ...orm.TxOrmer)
+	CreateOrUpdateTag(ctx contextDTO.ContextDTO, dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer)
+	RemoveArt(ctx contextDTO.ContextDTO, dto tagDTO.TagRemoveArtDTO, tx ...orm.TxOrmer)
+	DeleteTag(ctx contextDTO.ContextDTO, tagName string, tx ...orm.TxOrmer)
 }
 
 type TagBizServiceImpl struct {
@@ -27,7 +28,7 @@ func NewTagBizService() *TagBizServiceImpl {
 	}
 }
 
-func (impl *TagBizServiceImpl) CreateOrUpdateTag(dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer) {
+func (impl *TagBizServiceImpl) CreateOrUpdateTag(ctx contextDTO.ContextDTO, dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer) {
 	if dto.Name == "" {
 		panic(errors.NewError("tag name cannot be empty"))
 	}
@@ -56,7 +57,7 @@ func (impl *TagBizServiceImpl) CreateOrUpdateTag(dto tagDTO.TagCreateOrUpdateDTO
 	}
 }
 
-func (impl *TagBizServiceImpl) RemoveArt(dto tagDTO.TagRemoveArtDTO, tx ...orm.TxOrmer) {
+func (impl *TagBizServiceImpl) RemoveArt(ctx contextDTO.ContextDTO, dto tagDTO.TagRemoveArtDTO, tx ...orm.TxOrmer) {
 	tag, err := impl.tagMapper.SelectByName(dto.Name, tx...)
 	if err != nil && !pkgErrors.Is(err, orm.ErrNoRows) {
 		panic(errors.WrapError(err, "select tag failed"))
@@ -69,7 +70,7 @@ func (impl *TagBizServiceImpl) RemoveArt(dto tagDTO.TagRemoveArtDTO, tx ...orm.T
 	}
 }
 
-func (impl *TagBizServiceImpl) DeleteTag(tagName string, tx ...orm.TxOrmer) {
+func (impl *TagBizServiceImpl) DeleteTag(ctx contextDTO.ContextDTO, tagName string, tx ...orm.TxOrmer) {
 	err := impl.tagMapper.DeleteByName(tagName, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("delete tag [%s] failed", tagName)))

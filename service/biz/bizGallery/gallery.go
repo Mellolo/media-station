@@ -8,6 +8,7 @@ import (
 	"media-station/enum"
 	"media-station/generator"
 	"media-station/models/do/galleryDO"
+	"media-station/models/dto/contextDTO"
 	"media-station/models/dto/fileDTO"
 	"media-station/models/dto/galleryDTO"
 	"media-station/storage/db"
@@ -20,14 +21,14 @@ const (
 )
 
 type GalleryBizService interface {
-	GetGalleryPage(id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO
-	SearchGallery(searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO
-	CreateGallery(createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
-	UpdateGallery(id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer)
-	DeleteGallery(id int64, tx ...orm.TxOrmer) (string, int)
-	ShowGalleryPage(id int64, page int) galleryDTO.PictureFileDTO
+	GetGalleryPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO
+	SearchGallery(ctx contextDTO.ContextDTO, searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO
+	CreateGallery(ctx contextDTO.ContextDTO, createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
+	UpdateGallery(ctx contextDTO.ContextDTO, id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer)
+	DeleteGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) (string, int)
+	ShowGalleryPage(ctx contextDTO.ContextDTO, id int64, page int) galleryDTO.PictureFileDTO
 
-	RemoveGalleryDir(dir string, count int)
+	RemoveGalleryDir(ctx contextDTO.ContextDTO, dir string, count int)
 }
 
 func NewGalleryBizService() *GalleryBizServiceImpl {
@@ -44,7 +45,7 @@ type GalleryBizServiceImpl struct {
 	pictureStorage oss.PictureStorage
 }
 
-func (impl *GalleryBizServiceImpl) GetGalleryPage(id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO {
+func (impl *GalleryBizServiceImpl) GetGalleryPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO {
 	gallery, err := impl.galleryMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("get gallery [%d] failed", id)))
@@ -62,7 +63,7 @@ func (impl *GalleryBizServiceImpl) GetGalleryPage(id int64, tx ...orm.TxOrmer) g
 	}
 }
 
-func (impl *GalleryBizServiceImpl) SearchGallery(searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO {
+func (impl *GalleryBizServiceImpl) SearchGallery(ctx contextDTO.ContextDTO, searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO {
 	// 读取数据库
 	var galleryDOList []*galleryDO.GalleryDO
 	if searchDTO.Keyword == "" {
@@ -103,7 +104,7 @@ func (impl *GalleryBizServiceImpl) SearchGallery(searchDTO galleryDTO.GallerySea
 	return items
 }
 
-func (impl *GalleryBizServiceImpl) CreateGallery(createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64 {
+func (impl *GalleryBizServiceImpl) CreateGallery(ctx contextDTO.ContextDTO, createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64 {
 	defer func() {
 		if ch != nil {
 			close(ch)
@@ -149,7 +150,7 @@ func (impl *GalleryBizServiceImpl) CreateGallery(createDTO galleryDTO.GalleryCre
 	return id
 }
 
-func (impl *GalleryBizServiceImpl) UpdateGallery(id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer) {
+func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer) {
 	gallery, err := impl.galleryMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
@@ -179,7 +180,7 @@ func (impl *GalleryBizServiceImpl) UpdateGallery(id int64, updateDTO galleryDTO.
 	}
 }
 
-func (impl *GalleryBizServiceImpl) DeleteGallery(id int64, tx ...orm.TxOrmer) (string, int) {
+func (impl *GalleryBizServiceImpl) DeleteGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) (string, int) {
 	gallery, err := impl.galleryMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
@@ -192,7 +193,7 @@ func (impl *GalleryBizServiceImpl) DeleteGallery(id int64, tx ...orm.TxOrmer) (s
 	return gallery.GalleryUrl, gallery.PageCount
 }
 
-func (impl *GalleryBizServiceImpl) ShowGalleryPage(id int64, page int) galleryDTO.PictureFileDTO {
+func (impl *GalleryBizServiceImpl) ShowGalleryPage(ctx contextDTO.ContextDTO, id int64, page int) galleryDTO.PictureFileDTO {
 	gallery, err := impl.galleryMapper.SelectById(id)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
@@ -207,7 +208,7 @@ func (impl *GalleryBizServiceImpl) ShowGalleryPage(id int64, page int) galleryDT
 	}
 }
 
-func (impl *GalleryBizServiceImpl) RemoveGalleryDir(dir string, count int) {
+func (impl *GalleryBizServiceImpl) RemoveGalleryDir(ctx contextDTO.ContextDTO, dir string, count int) {
 	for i := 1; i <= count; i++ {
 		impl.pictureStorage.Remove(bucketGallery, fmt.Sprintf("%s/%d.jpg", dir, i))
 	}

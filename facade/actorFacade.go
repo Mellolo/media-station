@@ -1,24 +1,20 @@
 package facade
 
 import (
-	"fmt"
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/server/web"
 	"github.com/mellolo/common/errors"
-	"github.com/mellolo/common/utils/jsonUtil"
-	"media-station/controllers/filters"
 	"media-station/models/dto/actorDTO"
 	"media-station/models/dto/fileDTO"
-	"media-station/models/dto/userDTO"
 	"media-station/models/vo/actorVO"
 	"media-station/models/vo/videoVO"
 	"media-station/service/biz/bizActor"
 	"media-station/service/biz/bizVideo"
 	"media-station/storage/db"
-	"strconv"
 )
 
 type ActorFacade struct {
+	AbstractFacade
 	actorBizService bizActor.ActorBizService
 	videoBizService bizVideo.VideoBizService
 }
@@ -31,16 +27,14 @@ func NewActorFacade() *ActorFacade {
 }
 
 func (impl *ActorFacade) GetActorPage(c *web.Controller) actorVO.ActorPageVO {
-	// 获取演员ID
-	idStr := c.Ctx.Input.Param(":id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("param [id] %s is invalid", idStr)))
-	}
+	// 上下文
+	ctx := impl.GetContext(c)
+	// id
+	id := impl.GetRestfulParamInt64(c, ":id")
 
 	var vo actorVO.ActorPageVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		actorPage := impl.actorBizService.GetActorPage(id)
+		actorPage := impl.actorBizService.GetActorPage(ctx, id)
 		vo = actorVO.ActorPageVO{
 			Id:          actorPage.Id,
 			Name:        actorPage.Name,
@@ -49,7 +43,7 @@ func (impl *ActorFacade) GetActorPage(c *web.Controller) actorVO.ActorPageVO {
 			GalleryIds:  actorPage.Art.GalleryIds,
 		}
 
-		items := impl.videoBizService.SearchVideoByActor(id, tx)
+		items := impl.videoBizService.SearchVideoByActor(ctx, id, tx)
 
 		for _, item := range items {
 			vo.Videos = append(vo.Videos, videoVO.VideoItemVO{
@@ -65,16 +59,14 @@ func (impl *ActorFacade) GetActorPage(c *web.Controller) actorVO.ActorPageVO {
 }
 
 func (impl *ActorFacade) GetActorCover(c *web.Controller) actorVO.ActorCoverFileVO {
-	// 获取演员ID
-	idStr := c.Ctx.Input.Param(":id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("param [id] %s is invalid", idStr)))
-	}
+	// 上下文
+	ctx := impl.GetContext(c)
+	// id
+	id := impl.GetRestfulParamInt64(c, ":id")
 
 	var vo actorVO.ActorCoverFileVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		cover := impl.actorBizService.GetActorCover(id)
+		cover := impl.actorBizService.GetActorCover(ctx, id)
 		vo = actorVO.ActorCoverFileVO{
 			Reader: cover.Reader,
 			Header: cover.Header,
@@ -85,6 +77,8 @@ func (impl *ActorFacade) GetActorCover(c *web.Controller) actorVO.ActorCoverFile
 }
 
 func (impl *ActorFacade) CreateActor(c *web.Controller) int64 {
+	// 上下文
+	ctx := impl.GetContext(c)
 	// 名称
 	name := c.GetString("name", "")
 	if name == "" {
@@ -94,12 +88,7 @@ func (impl *ActorFacade) CreateActor(c *web.Controller) int64 {
 	description := c.GetString("description", "")
 
 	// 创建者
-	creator := ""
-	if claim, ok := c.Ctx.Input.GetData(filters.ContextClaim).(string); ok {
-		var userClaim userDTO.UserClaimDTO
-		jsonUtil.UnmarshalJsonString(claim, &userClaim)
-		creator = userClaim.Username
-	}
+	creator := ctx.UserClaim.Username
 	if creator == "" {
 		panic(errors.NewError("creator is empty"))
 	}
@@ -111,30 +100,30 @@ func (impl *ActorFacade) CreateActor(c *web.Controller) int64 {
 	}
 
 	// 获取封面文件
-	coverDTO := fileDTO.FileDTO{}
-	reader, header, err := c.GetFile("coverImage")
-	if err == nil {
-		coverDTO = fileDTO.FileDTO{
-			File: reader,
-			Size: header.Size,
-		}
-	}
+	reader, size := impl.GetFileNotInvalid(c, "cover")
 
 	var id int64
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		id = impl.actorBizService.CreateActor(createDTO, coverDTO, tx)
+		coverDTO := fileDTO.FileDTO{
+			File: reader,
+			Size: size,
+		}
+		id = impl.actorBizService.CreateActor(ctx, createDTO, coverDTO, tx)
 	})
 
 	return id
 }
 
 func (impl *ActorFacade) SearchActor(c *web.Controller) []actorVO.ActorItemVO {
+	// 上下文
+	ctx := impl.GetContext(c)
+
 	var searchDTO actorDTO.ActorSearchDTO
 	searchDTO.Keyword = c.GetString("keyword", "")
 
 	var voList []actorVO.ActorItemVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		items := impl.actorBizService.SearchActor(searchDTO, tx)
+		items := impl.actorBizService.SearchActor(ctx, searchDTO, tx)
 
 		for _, item := range items {
 			voList = append(voList, actorVO.ActorItemVO{
@@ -148,53 +137,45 @@ func (impl *ActorFacade) SearchActor(c *web.Controller) []actorVO.ActorItemVO {
 }
 
 func (impl *ActorFacade) UpdateActor(c *web.Controller) {
+	// 上下文
+	ctx := impl.GetContext(c)
+	// id
+	id := impl.GetInt64NotInvalid(c, "id")
 	// 名称
-	id, err := c.GetInt64("id")
-	if err != nil {
-		panic(errors.WrapError(err, "id is invalid"))
-	}
-	// 名称
-	name := c.GetString("name", "")
-	if name == "" {
-		panic(errors.NewError("actor name is empty"))
-	}
+	name := impl.GetStringNotEmpty(c, "name")
 	// 描述
 	description := c.GetString("description", "")
 
 	// 获取封面文件
-	coverDTO := fileDTO.FileDTO{}
-	reader, header, err := c.GetFile("cover")
-	if err == nil {
-		coverDTO = fileDTO.FileDTO{
-			File: reader,
-			Size: header.Size,
-		}
-	}
-
-	dto := actorDTO.ActorUpdateDTO{
-		Id:          id,
-		Name:        name,
-		Description: description,
-	}
+	reader, size := impl.GetFile(c, "cover")
 
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		lastCoverUrl := impl.actorBizService.UpdateActor(dto.Id, dto, coverDTO, tx)
-		impl.actorBizService.RemoveLastCover(lastCoverUrl)
+		dto := actorDTO.ActorUpdateDTO{
+			Id:          id,
+			Name:        name,
+			Description: description,
+		}
+
+		coverDTO := fileDTO.FileDTO{
+			File: reader,
+			Size: size,
+		}
+
+		lastCoverUrl := impl.actorBizService.UpdateActor(ctx, dto.Id, dto, coverDTO, tx)
+		impl.actorBizService.RemoveLastCover(ctx, lastCoverUrl)
 	})
 
 }
 
 func (impl *ActorFacade) DeleteActor(c *web.Controller) {
-	// 获取演员ID
-	idStr := c.Ctx.Input.Param(":id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("param [id] %s is invalid", idStr)))
-	}
+	// 上下文
+	ctx := impl.GetContext(c)
+	// id
+	id := impl.GetRestfulParamInt64(c, ":id")
 
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		lastCoverUrl := impl.actorBizService.DeleteActor(id, tx)
-		impl.actorBizService.RemoveLastCover(lastCoverUrl)
+		lastCoverUrl := impl.actorBizService.DeleteActor(ctx, id, tx)
+		impl.actorBizService.RemoveLastCover(ctx, lastCoverUrl)
 	})
 
 }

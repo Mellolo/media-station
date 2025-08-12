@@ -1,27 +1,23 @@
 package facade
 
 import (
-	"fmt"
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/server/web"
 	"github.com/mellolo/common/errors"
-	"github.com/mellolo/common/utils/jsonUtil"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"media-station/controllers/filters"
 	"media-station/models/dto/actorDTO"
 	"media-station/models/dto/fileDTO"
 	"media-station/models/dto/tagDTO"
-	"media-station/models/dto/userDTO"
 	"media-station/models/dto/videoDTO"
 	"media-station/models/vo/videoVO"
 	"media-station/service/biz/bizActor"
 	"media-station/service/biz/bizTag"
 	"media-station/service/biz/bizVideo"
 	"media-station/storage/db"
-	"strconv"
 )
 
 type VideoFacade struct {
+	AbstractFacade
 	videoBizService bizVideo.VideoBizService
 	actorBizService bizActor.ActorBizService
 	tagBizService   bizTag.TagBizService
@@ -36,20 +32,24 @@ func NewVideoFacade() *VideoFacade {
 }
 
 func (impl *VideoFacade) SearchVideo(c *web.Controller) []videoVO.VideoItemVO {
-	var searchDTO videoDTO.VideoSearchDTO
-	searchDTO.Keyword = c.GetString("keyword", "")
+	// 上下文
+	ctx := impl.GetContext(c)
+	keyword := c.GetString("keyword", "")
 	// 演员
-	var actors []int64
-	jsonUtil.UnmarshalJsonString(c.GetString("actors", "[]"), &actors)
-	searchDTO.Actors = sets.NewInt64(actors...).List()
-	// tag
-	var tags []string
-	jsonUtil.UnmarshalJsonString(c.GetString("tags", "[]"), &tags)
-	searchDTO.Tags = sets.NewString(tags...).List()
+	actors := impl.GetStringAsInt64List(c, "actors")
+	actors = sets.NewInt64(actors...).List()
+	// tags
+	tags := impl.GetStringAsStringList(c, "tags")
+	tags = sets.NewString(tags...).List()
 
 	var voList []videoVO.VideoItemVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		items := impl.videoBizService.SearchVideo(searchDTO, tx)
+		searchDTO := videoDTO.VideoSearchDTO{
+			Keyword: keyword,
+			Actors:  actors,
+			Tags:    tags,
+		}
+		items := impl.videoBizService.SearchVideo(ctx, searchDTO, tx)
 
 		for _, item := range items {
 			voList = append(voList, videoVO.VideoItemVO{
@@ -65,11 +65,14 @@ func (impl *VideoFacade) SearchVideo(c *web.Controller) []videoVO.VideoItemVO {
 }
 
 func (impl *VideoFacade) SearchVideoByTag(c *web.Controller) []videoVO.VideoItemVO {
+	// 上下文
+	ctx := impl.GetContext(c)
+	// tag
 	tagName := c.GetString("tag", "")
 
 	var voList []videoVO.VideoItemVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		items := impl.videoBizService.SearchVideoByTag(tagName, tx)
+		items := impl.videoBizService.SearchVideoByTag(ctx, tagName, tx)
 
 		for _, item := range items {
 			voList = append(voList, videoVO.VideoItemVO{
@@ -85,19 +88,17 @@ func (impl *VideoFacade) SearchVideoByTag(c *web.Controller) []videoVO.VideoItem
 }
 
 func (impl *VideoFacade) GetVideoPage(c *web.Controller) videoVO.VideoPageVO {
+	// 上下文
+	ctx := impl.GetContext(c)
 	// id
-	idStr := c.Ctx.Input.Param(":id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		panic(errors.WrapError(err, "get videoId failed"))
-	}
+	id := impl.GetRestfulParamInt64(c, ":id")
 
 	var vo videoVO.VideoPageVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		page := impl.videoBizService.GetVideoPage(id, tx)
+		page := impl.videoBizService.GetVideoPage(ctx, id, tx)
 		var actors []videoVO.VideoActorVO
 		for _, actorId := range page.Actors {
-			actorPage := impl.actorBizService.GetActorPage(actorId)
+			actorPage := impl.actorBizService.GetActorPage(ctx, actorId)
 			actors = append(actors, videoVO.VideoActorVO{
 				Id:   actorPage.Id,
 				Name: actorPage.Name,
@@ -117,16 +118,14 @@ func (impl *VideoFacade) GetVideoPage(c *web.Controller) videoVO.VideoPageVO {
 }
 
 func (impl *VideoFacade) GetVideoCover(c *web.Controller) videoVO.VideoCoverFileVO {
-	// 获取演员ID
-	idStr := c.Ctx.Input.Param(":id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("param [id] %s is invalid", idStr)))
-	}
+	// 上下文
+	ctx := impl.GetContext(c)
+	// id
+	id := impl.GetRestfulParamInt64(c, ":id")
 
 	var vo videoVO.VideoCoverFileVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		cover := impl.videoBizService.GetVideoCover(id)
+		cover := impl.videoBizService.GetVideoCover(ctx, id)
 		vo = videoVO.VideoCoverFileVO{
 			Reader: cover.Reader,
 			Header: cover.Header,
@@ -137,36 +136,22 @@ func (impl *VideoFacade) GetVideoCover(c *web.Controller) videoVO.VideoCoverFile
 }
 
 func (impl *VideoFacade) UploadVideo(c *web.Controller) {
+	// 上下文
+	ctx := impl.GetContext(c)
 	// 名称
 	name := c.GetString("name", "")
 	// 描述
 	description := c.GetString("description", "")
 	// 演员
-	var actors []int64
-	jsonUtil.UnmarshalJsonString(c.GetString("actors", "[]"), &actors)
+	actors := impl.GetStringAsInt64List(c, "actors")
 	actors = sets.NewInt64(actors...).List()
 	// tags
-	var tags []string
-	jsonUtil.UnmarshalJsonString(c.GetString("tags", "[]"), &tags)
+	tags := impl.GetStringAsStringList(c, "tags")
 	tags = sets.NewString(tags...).List()
 	// 上传者
-	uploader := ""
-	if claim, ok := c.Ctx.Input.GetData(filters.ContextClaim).(string); ok {
-		var userClaim userDTO.UserClaimDTO
-		jsonUtil.UnmarshalJsonString(claim, &userClaim)
-		uploader = userClaim.Username
-	}
+	uploader := ctx.UserClaim.Username
 	// 权限
 	permissionLevel := c.GetString("permissionLevel", "")
-
-	createDTO := videoDTO.VideoCreateDTO{
-		Name:            name,
-		Description:     description,
-		Actors:          actors,
-		Tags:            tags,
-		Uploader:        uploader,
-		PermissionLevel: permissionLevel,
-	}
 
 	// 视频文件
 	reader, header, err := c.GetFile("file")
@@ -179,8 +164,16 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 	}
 
 	db.DoTransaction(func(tx orm.TxOrmer) {
+		createDTO := videoDTO.VideoCreateDTO{
+			Name:            name,
+			Description:     description,
+			Actors:          actors,
+			Tags:            tags,
+			Uploader:        uploader,
+			PermissionLevel: permissionLevel,
+		}
 		// 创建视频
-		id := impl.videoBizService.CreateVideo(createDTO, videoFileDTO)
+		id := impl.videoBizService.CreateVideo(ctx, createDTO, videoFileDTO)
 		// 更新actor作品
 		for _, actorId := range createDTO.Actors {
 			updateDTO := actorDTO.ActorUpdateDTO{
@@ -189,7 +182,7 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 					VideoIds: []int64{id},
 				},
 			}
-			impl.actorBizService.UpdateActor(actorId, updateDTO, fileDTO.FileDTO{}, tx)
+			impl.actorBizService.UpdateActor(ctx, actorId, updateDTO, fileDTO.FileDTO{}, tx)
 		}
 		// 更新tag作品
 		for _, tagName := range createDTO.Tags {
@@ -199,19 +192,18 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 					VideoIds: []int64{id},
 				},
 			}
-			impl.tagBizService.CreateOrUpdateTag(tag, tx)
+			impl.tagBizService.CreateOrUpdateTag(ctx, tag, tx)
 		}
 	})
 }
 
 func (impl *VideoFacade) PlayVideo(c *web.Controller) videoVO.VideoFileVO {
-	idStr := c.Ctx.Input.Param(":id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("param [id] %s is invalid", idStr)))
-	}
+	// 上下文
+	ctx := impl.GetContext(c)
+	// id
+	id := impl.GetRestfulParamInt64(c, ":id")
 
-	dto := impl.videoBizService.PlayVideo(id, c.Ctx.Request.Header["Range"]...)
+	dto := impl.videoBizService.PlayVideo(ctx, id, c.Ctx.Request.Header["Range"]...)
 	return videoVO.VideoFileVO{
 		Header: dto.Header,
 		Reader: dto.Reader,
