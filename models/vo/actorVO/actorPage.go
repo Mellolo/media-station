@@ -1,5 +1,7 @@
 package actorVO
 
+import "media-station/models/vo/videoVO"
+
 // +k8s:deepcopy-gen=true
 type ActorPageVO struct {
 	Id          int64  `json:"id"`
@@ -7,6 +9,6 @@ type ActorPageVO struct {
 	Description string `json:"description"`
 	Creator     string `json:"creator"`
 
-	VideoIds   []int64 `json:"videoIds"`
-	GalleryIds []int64 `json:"galleryIds"`
+	Videos     []videoVO.VideoItemVO `json:"videos"`
+	GalleryIds []int64               `json:"galleryIds"`
 }

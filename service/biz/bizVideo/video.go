@@ -13,7 +13,6 @@ import (
 	"media-station/generator"
 	"media-station/models/do/videoDO"
 	"media-station/models/dto/fileDTO"
-	"media-station/models/dto/userDTO"
 	"media-station/models/dto/videoDTO"
 	"media-station/storage/cache"
 	"media-station/storage/db"
@@ -33,6 +32,8 @@ type VideoBizService interface {
 	GetVideoPage(id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
 	GetVideoCover(id int64, tx ...orm.TxOrmer) videoDTO.VideoCoverDTO
 	SearchVideo(searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
+	SearchVideoByActor(actorId int64, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
+	SearchVideoByTag(tagName string, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
 	CreateVideo(createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
 	UpdateVideo(id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer)
 	DeleteVideo(id int64, tx ...orm.TxOrmer) (string, string)
@@ -137,7 +138,7 @@ func (impl *VideoBizServiceImpl) SearchVideo(searchDTO videoDTO.VideoSearchDTO, 
 	return items
 }
 
-func (impl *VideoBizServiceImpl) SearchVideoByActor(actorId int64, userClaim userDTO.UserClaimDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
+func (impl *VideoBizServiceImpl) SearchVideoByActor(actorId int64, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
 	actor, actorErr := impl.actorMapper.SelectById(actorId, tx...)
 	if actorErr != nil || actor == nil {
 		logs.Error("get actor [%d] failed", actorId) // 不报错，记录日志
@@ -146,6 +147,39 @@ func (impl *VideoBizServiceImpl) SearchVideoByActor(actorId int64, userClaim use
 
 	var items []videoDTO.VideoItemDTO
 	for _, videoId := range actor.Art.VideoIds {
+		do, videoErr := impl.videoMapper.SelectById(videoId, tx...)
+		if videoErr != nil {
+			logs.Error("select video [%d] error", videoId) // 不报错，记录日志
+		}
+		if do == nil {
+			continue
+		}
+
+		if do.PermissionLevel == enum.PermissionForbidden || do.PermissionLevel == enum.PermissionPrivate {
+			continue
+		}
+
+		items = append(items, videoDTO.VideoItemDTO{
+			Id:              do.Id,
+			Name:            do.Name,
+			CoverUrl:        do.CoverUrl,
+			Duration:        impl.getVideoDuration(do.Id, do.VideoUrl),
+			PermissionLevel: do.PermissionLevel,
+		})
+	}
+
+	return items
+}
+
+func (impl *VideoBizServiceImpl) SearchVideoByTag(tagName string, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
+	tag, tagErr := impl.tagMapper.SelectByName(tagName, tx...)
+	if tagErr != nil || tag == nil {
+		logs.Error("get tag [%d] failed", tagName) // 不报错，记录日志
+		return []videoDTO.VideoItemDTO{}
+	}
+
+	var items []videoDTO.VideoItemDTO
+	for _, videoId := range tag.Art.VideoIds {
 		do, videoErr := impl.videoMapper.SelectById(videoId, tx...)
 		if videoErr != nil {
 			logs.Error("select video [%d] error", videoId) // 不报错，记录日志

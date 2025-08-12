@@ -11,18 +11,22 @@ import (
 	"media-station/models/dto/fileDTO"
 	"media-station/models/dto/userDTO"
 	"media-station/models/vo/actorVO"
+	"media-station/models/vo/videoVO"
 	"media-station/service/biz/bizActor"
+	"media-station/service/biz/bizVideo"
 	"media-station/storage/db"
 	"strconv"
 )
 
 type ActorFacade struct {
 	actorBizService bizActor.ActorBizService
+	videoBizService bizVideo.VideoBizService
 }
 
 func NewActorFacade() *ActorFacade {
 	return &ActorFacade{
 		actorBizService: bizActor.NewActorBizService(),
+		videoBizService: bizVideo.NewVideoBizService(),
 	}
 }
 
@@ -42,8 +46,18 @@ func (impl *ActorFacade) GetActorPage(c *web.Controller) actorVO.ActorPageVO {
 			Name:        actorPage.Name,
 			Description: actorPage.Description,
 			Creator:     actorPage.Creator,
-			VideoIds:    actorPage.Art.VideoIds,
 			GalleryIds:  actorPage.Art.GalleryIds,
+		}
+
+		items := impl.videoBizService.SearchVideoByActor(id, tx)
+
+		for _, item := range items {
+			vo.Videos = append(vo.Videos, videoVO.VideoItemVO{
+				Id:              item.Id,
+				Name:            item.Name,
+				Duration:        item.Duration,
+				PermissionLevel: item.PermissionLevel,
+			})
 		}
 	})
 
