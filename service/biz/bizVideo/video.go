@@ -13,6 +13,7 @@ import (
 	"media-station/generator"
 	"media-station/models/do/videoDO"
 	"media-station/models/dto/fileDTO"
+	"media-station/models/dto/userDTO"
 	"media-station/models/dto/videoDTO"
 	"media-station/storage/cache"
 	"media-station/storage/db"
@@ -43,6 +44,8 @@ type VideoBizService interface {
 
 func NewVideoBizService() *VideoBizServiceImpl {
 	return &VideoBizServiceImpl{
+		actorMapper:      db.NewActorMapper(),
+		tagMapper:        db.NewTagMapper(),
 		videoMapper:      db.NewVideoMapper(),
 		idGenerator:      generator.NewIdGenerator(),
 		pictureStorage:   oss.NewPictureStorage(),
@@ -52,6 +55,8 @@ func NewVideoBizService() *VideoBizServiceImpl {
 }
 
 type VideoBizServiceImpl struct {
+	actorMapper      db.ActorMapper
+	tagMapper        db.TagMapper
 	videoMapper      db.VideoMapper
 	idGenerator      generator.IdGenerator
 	pictureStorage   oss.PictureStorage
@@ -113,10 +118,43 @@ func (impl *VideoBizServiceImpl) SearchVideo(searchDTO videoDTO.VideoSearchDTO, 
 		if do.PermissionLevel == enum.PermissionForbidden || do.PermissionLevel == enum.PermissionPrivate {
 			continue
 		}
-		if len(do.Actors) > 0 && !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
+		if len(searchDTO.Actors) > 0 && !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
 			continue
 		}
-		if len(do.Tags) > 0 && !sets.NewString(do.Tags...).HasAll(searchDTO.Tags...) {
+		if len(searchDTO.Tags) > 0 && !sets.NewString(do.Tags...).HasAll(searchDTO.Tags...) {
+			continue
+		}
+
+		items = append(items, videoDTO.VideoItemDTO{
+			Id:              do.Id,
+			Name:            do.Name,
+			CoverUrl:        do.CoverUrl,
+			Duration:        impl.getVideoDuration(do.Id, do.VideoUrl),
+			PermissionLevel: do.PermissionLevel,
+		})
+	}
+
+	return items
+}
+
+func (impl *VideoBizServiceImpl) SearchVideoByActor(actorId int64, userClaim userDTO.UserClaimDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
+	actor, actorErr := impl.actorMapper.SelectById(actorId, tx...)
+	if actorErr != nil || actor == nil {
+		logs.Error("get actor [%d] failed", actorId) // 不报错，记录日志
+		return []videoDTO.VideoItemDTO{}
+	}
+
+	var items []videoDTO.VideoItemDTO
+	for _, videoId := range actor.Art.VideoIds {
+		do, videoErr := impl.videoMapper.SelectById(videoId, tx...)
+		if videoErr != nil {
+			logs.Error("select video [%d] error", videoId) // 不报错，记录日志
+		}
+		if do == nil {
+			continue
+		}
+
+		if do.PermissionLevel == enum.PermissionForbidden || do.PermissionLevel == enum.PermissionPrivate {
 			continue
 		}
 

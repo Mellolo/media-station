@@ -85,10 +85,10 @@ func (impl *GalleryBizServiceImpl) SearchGallery(searchDTO galleryDTO.GallerySea
 		if do.PermissionLevel == enum.PermissionForbidden || do.PermissionLevel == enum.PermissionPrivate {
 			continue
 		}
-		if len(do.Actors) > 0 && !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
+		if len(searchDTO.Actors) > 0 && !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
 			continue
 		}
-		if len(do.Tags) > 0 && !sets.NewString(do.Tags...).HasAll(searchDTO.Tags...) {
+		if len(searchDTO.Tags) > 0 && !sets.NewString(do.Tags...).HasAll(searchDTO.Tags...) {
 			continue
 		}
 
