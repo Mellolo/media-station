@@ -64,31 +64,6 @@ func (impl *VideoFacade) SearchVideo(c *web.Controller) []videoVO.VideoItemVO {
 	return voList
 }
 
-func (impl *VideoFacade) SearchVideoByActor(c *web.Controller) []videoVO.VideoItemVO {
-	// 获取演员ID
-	idStr := c.Ctx.Input.Param(":id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("param [id] %s is invalid", idStr)))
-	}
-
-	var voList []videoVO.VideoItemVO
-	db.DoTransaction(func(tx orm.TxOrmer) {
-		items := impl.videoBizService.SearchVideoByActor(id, tx)
-
-		for _, item := range items {
-			voList = append(voList, videoVO.VideoItemVO{
-				Id:              item.Id,
-				Name:            item.Name,
-				Duration:        item.Duration,
-				PermissionLevel: item.PermissionLevel,
-			})
-		}
-	})
-
-	return voList
-}
-
 func (impl *VideoFacade) SearchVideoByTag(c *web.Controller) []videoVO.VideoItemVO {
 	tagName := c.GetString("tag", "")
 
