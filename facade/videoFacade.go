@@ -55,6 +55,7 @@ func (impl *VideoFacade) SearchVideo(c *web.Controller) []videoVO.VideoItemVO {
 			voList = append(voList, videoVO.VideoItemVO{
 				Id:              item.Id,
 				Name:            item.Name,
+				Duration:        item.Duration,
 				PermissionLevel: item.PermissionLevel,
 			})
 		}

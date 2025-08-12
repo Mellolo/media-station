@@ -17,6 +17,7 @@ import (
 	"media-station/storage/cache"
 	"media-station/storage/db"
 	"media-station/storage/oss"
+	"strconv"
 	"time"
 )
 
@@ -238,8 +239,10 @@ func (impl *VideoBizServiceImpl) getVideoDuration(id int64, videoPath string) fl
 	if getErr != nil {
 		logs.Error(fmt.Sprintf("error get video duration: %v", getErr))
 	}
-	if seconds, ok := val.(float64); ok {
-		return seconds
+	if durationStr, ok := val.(string); ok {
+		if seconds, err := strconv.ParseFloat(durationStr, 64); err == nil {
+			return seconds
+		}
 	}
 	seconds, err := videoUtil.GetVideoDuration(impl.videoStorage.GetStreamURL(bucketVideo, videoPath, time.Minute))
 	if err == nil {
