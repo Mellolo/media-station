@@ -26,7 +26,7 @@ type GalleryBizService interface {
 	GetGalleryPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO
 	SearchGallery(ctx contextDTO.ContextDTO, searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO
 	CreateGallery(ctx contextDTO.ContextDTO, createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
-	UpdateGallery(ctx contextDTO.ContextDTO, id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer)
+	UpdateGallery(ctx contextDTO.ContextDTO, id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO
 	RemoveActor(ctx contextDTO.ContextDTO, id int64, actorIds []int64, tx ...orm.TxOrmer)
 	RemoveTag(ctx contextDTO.ContextDTO, id int64, tags []string, tx ...orm.TxOrmer)
 	DeleteGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO
@@ -163,11 +163,12 @@ func (impl *GalleryBizServiceImpl) CreateGallery(ctx contextDTO.ContextDTO, crea
 	return id
 }
 
-func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer) {
+func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO {
 	gallery, err := impl.galleryMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
 	}
+	origin := gallery.DeepCopy()
 
 	// 更新gallery
 	gallery.Name = updateDTO.Name
@@ -182,6 +183,18 @@ func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, id i
 	err = impl.galleryMapper.Update(id, gallery, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("update gallery [%d] failed", id)))
+	}
+
+	return galleryDTO.GalleryPageDTO{
+		Id:              origin.Id,
+		Name:            origin.Name,
+		Description:     origin.Description,
+		Actors:          origin.Actors,
+		Tags:            origin.Tags,
+		Uploader:        origin.Uploader,
+		CoverUrl:        origin.CoverUrl,
+		GalleryUrl:      origin.GalleryUrl,
+		PermissionLevel: origin.PermissionLevel,
 	}
 }
 
