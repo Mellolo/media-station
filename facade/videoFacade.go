@@ -206,23 +206,39 @@ func (impl *VideoFacade) UpdateVideo(c *web.Controller) {
 	db.DoTransaction(func(tx orm.TxOrmer) {
 		id := dto.Id
 		// 更新视频
-		impl.videoBizService.UpdateVideo(ctx, id, dto, tx)
+		page := impl.videoBizService.UpdateVideo(ctx, id, dto, tx)
 		// 更新actor作品
-		for _, actorId := range dto.ActorIds {
+		for _, actorId := range sets.NewInt64(dto.ActorIds...).Delete(page.Actors...).List() {
 			artDTO := actorDTO.ActorArtDTO{
 				VideoIds: []int64{id},
 			}
 			impl.actorBizService.AddArt(ctx, actorId, artDTO, tx)
 		}
+		for _, actorId := range sets.NewInt64(page.Actors...).Delete(dto.ActorIds...).List() {
+			artDTO := actorDTO.ActorArtDTO{
+				VideoIds: []int64{id},
+			}
+			impl.actorBizService.RemoveArt(ctx, actorId, artDTO, tx)
+		}
 		// 更新tag作品
-		for _, tagName := range dto.Tags {
+		for _, tagName := range sets.NewString(dto.Tags...).Delete(page.Tags...).List() {
 			updateDTO := tagDTO.TagCreateOrUpdateDTO{
-				Name: tagName,
+				Name:    tagName,
+				Creator: ctx.UserClaim.Username,
 				Details: tagDTO.TagDetailsDTO{
 					VideoIds: []int64{id},
 				},
 			}
 			impl.tagBizService.AddArt(ctx, updateDTO, tx)
+		}
+		for _, tagName := range sets.NewString(page.Tags...).Delete(dto.Tags...).List() {
+			updateDTO := tagDTO.TagRemoveArtDTO{
+				Name: tagName,
+				Details: tagDTO.TagDetailsDTO{
+					VideoIds: []int64{id},
+				},
+			}
+			impl.tagBizService.RemoveArt(ctx, updateDTO, tx)
 		}
 	})
 }

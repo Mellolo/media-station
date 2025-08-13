@@ -38,7 +38,7 @@ type VideoBizService interface {
 	SearchVideoByActor(ctx contextDTO.ContextDTO, actorId int64, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
 	SearchVideoByTag(ctx contextDTO.ContextDTO, tagName string, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
 	CreateVideo(ctx contextDTO.ContextDTO, createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
-	UpdateVideo(ctx contextDTO.ContextDTO, id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer)
+	UpdateVideo(ctx contextDTO.ContextDTO, id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
 	RemoveActor(ctx contextDTO.ContextDTO, id int64, actorIds []int64, tx ...orm.TxOrmer)
 	RemoveTag(ctx contextDTO.ContextDTO, id int64, tags []string, tx ...orm.TxOrmer)
 	DeleteVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
@@ -267,11 +267,12 @@ func (impl *VideoBizServiceImpl) CreateVideo(ctx contextDTO.ContextDTO, createDT
 	return id
 }
 
-func (impl *VideoBizServiceImpl) UpdateVideo(ctx contextDTO.ContextDTO, id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) {
+func (impl *VideoBizServiceImpl) UpdateVideo(ctx contextDTO.ContextDTO, id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) videoDTO.VideoPageDTO {
 	video, err := impl.videoMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
 	}
+	origin := video.DeepCopy()
 
 	// 更新video
 	video.Name = updateDTO.Name
@@ -286,6 +287,18 @@ func (impl *VideoBizServiceImpl) UpdateVideo(ctx contextDTO.ContextDTO, id int64
 	err = impl.videoMapper.Update(id, video, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("update video [%d] failed", id)))
+	}
+
+	return videoDTO.VideoPageDTO{
+		Id:              origin.Id,
+		Name:            origin.Name,
+		Description:     origin.Description,
+		Actors:          origin.Actors,
+		Tags:            origin.Tags,
+		Uploader:        origin.Uploader,
+		CoverUrl:        origin.CoverUrl,
+		VideoUrl:        origin.VideoUrl,
+		PermissionLevel: origin.PermissionLevel,
 	}
 }
 
