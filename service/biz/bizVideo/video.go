@@ -272,18 +272,10 @@ func (impl *VideoBizServiceImpl) UpdateVideo(ctx contextDTO.ContextDTO, id int64
 	}
 
 	// 更新video
-	if updateDTO.Name != "" {
-		video.Name = updateDTO.Name
-	}
-	if updateDTO.Description != "" {
-		video.Description = updateDTO.Description
-	}
-	if len(updateDTO.Actors) > 0 {
-		video.Actors = updateDTO.Actors
-	}
-	if len(updateDTO.Tags) > 0 {
-		video.Tags = updateDTO.Tags
-	}
+	video.Name = updateDTO.Name
+	video.Description = updateDTO.Description
+	video.Actors = updateDTO.Actors
+	video.Tags = updateDTO.Tags
 	if sets.NewString(enum.PermissionLevels...).Has(updateDTO.PermissionLevel) {
 		video.PermissionLevel = updateDTO.PermissionLevel
 	}

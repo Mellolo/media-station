@@ -90,6 +90,15 @@ func (c *VideoAuthController) Upload() {
 	})
 }
 
+// @router update [post]
+func (c *VideoAuthController) Update() {
+	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
+		facade.NewVideoFacade().UploadVideo()
+
+		return templates.NewJsonTemplate200(nil)
+	})
+}
+
 //// @router play/:id [get]
 //func (c *VideoAuthController) Play() {
 //	templates.ServeVideoTemplate(c.Ctx, func() templates.VideoTemplate {

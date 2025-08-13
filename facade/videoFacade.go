@@ -139,7 +139,7 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 	// 上下文
 	ctx := impl.GetContext(c)
 	// 名称
-	name := c.GetString("name", "")
+	name := impl.GetStringNotEmpty(c, "name")
 	// 描述
 	description := c.GetString("description", "")
 	// 演员
@@ -193,6 +193,58 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 				},
 			}
 			impl.tagBizService.CreateOrUpdateTag(ctx, tag, tx)
+		}
+	})
+}
+
+func (impl *VideoFacade) UpdateVideo(c *web.Controller) {
+	// 上下文
+	ctx := impl.GetContext(c)
+	// 名称
+	name := impl.GetStringNotEmpty(c, "name")
+	// id
+	id := impl.GetInt64NotInvalid(c, "id")
+	// 描述
+	description := c.GetString("description", "")
+	// 演员
+	actors := impl.GetStringAsInt64List(c, "actors")
+	actors = sets.NewInt64(actors...).List()
+	// tags
+	tags := impl.GetStringAsStringList(c, "tags")
+	tags = sets.NewString(tags...).List()
+	// 权限
+	permissionLevel := c.GetString("permissionLevel", "")
+
+	db.DoTransaction(func(tx orm.TxOrmer) {
+		dto := videoDTO.VideoUpdateDTO{
+			Id:              id,
+			Name:            name,
+			Description:     description,
+			Actors:          actors,
+			Tags:            tags,
+			PermissionLevel: permissionLevel,
+		}
+		// 更新视频
+		impl.videoBizService.UpdateVideo(ctx, id, dto, tx)
+		// 更新actor作品
+		for _, actorId := range dto.Actors {
+			updateDTO := actorDTO.ActorUpdateDTO{
+				Id: actorId,
+				Art: actorDTO.ActorArtDTO{
+					VideoIds: []int64{id},
+				},
+			}
+			impl.actorBizService.UpdateActor(ctx, actorId, updateDTO, fileDTO.FileDTO{}, tx)
+		}
+		// 更新tag作品
+		for _, tagName := range dto.Tags {
+			updateDTO := tagDTO.TagCreateOrUpdateDTO{
+				Name: tagName,
+				Details: tagDTO.TagDetailsDTO{
+					VideoIds: []int64{id},
+				},
+			}
+			impl.tagBizService.CreateOrUpdateTag(ctx, updateDTO, tx)
 		}
 	})
 }
