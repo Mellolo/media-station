@@ -276,7 +276,7 @@ func (impl *VideoBizServiceImpl) UpdateVideo(ctx contextDTO.ContextDTO, id int64
 	// 更新video
 	video.Name = updateDTO.Name
 	video.Description = updateDTO.Description
-	video.Actors = updateDTO.Actors
+	video.Actors = updateDTO.ActorIds
 	video.Tags = updateDTO.Tags
 	if sets.NewString(enum.PermissionLevels...).Has(updateDTO.PermissionLevel) {
 		video.PermissionLevel = updateDTO.PermissionLevel

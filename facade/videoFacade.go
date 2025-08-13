@@ -208,7 +208,7 @@ func (impl *VideoFacade) UpdateVideo(c *web.Controller) {
 		// 更新视频
 		impl.videoBizService.UpdateVideo(ctx, id, dto, tx)
 		// 更新actor作品
-		for _, actorId := range dto.Actors {
+		for _, actorId := range dto.ActorIds {
 			artDTO := actorDTO.ActorArtDTO{
 				VideoIds: []int64{id},
 			}
