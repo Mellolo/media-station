@@ -142,14 +142,14 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller, ch chan string) {
 		}
 		// 更新tag作品
 		for _, tagName := range createDTO.Tags {
-			tag := tagDTO.TagCreateOrUpdateDTO{
+			updateDTO := tagDTO.TagCreateOrUpdateDTO{
 				Name:    tagName,
 				Creator: uploader,
 				Details: tagDTO.TagDetailsDTO{
 					GalleryIds: []int64{id},
 				},
 			}
-			impl.tagBizService.AddArt(ctx, tag, tx)
+			impl.tagBizService.AddArt(ctx, updateDTO, tx)
 		}
 	})
 }
