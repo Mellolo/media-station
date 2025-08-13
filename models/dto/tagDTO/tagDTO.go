@@ -8,6 +8,12 @@ type TagCreateOrUpdateDTO struct {
 }
 
 // +k8s:deepcopy-gen=true
+type TagDeleteArtDTO struct {
+	Name    string        `json:"name"`
+	Details TagDetailsDTO `json:"details"`
+}
+
+// +k8s:deepcopy-gen=true
 type TagRemoveArtDTO struct {
 	Name    string        `json:"name"`
 	Details TagDetailsDTO `json:"details"`

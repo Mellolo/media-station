@@ -4,6 +4,7 @@ import (
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/server/web"
 	"github.com/mellolo/common/errors"
+	"github.com/mellolo/common/utils/jsonUtil"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"media-station/models/dto/actorDTO"
 	"media-station/models/dto/fileDTO"
@@ -176,13 +177,10 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 		id := impl.videoBizService.CreateVideo(ctx, createDTO, videoFileDTO)
 		// 更新actor作品
 		for _, actorId := range createDTO.Actors {
-			updateDTO := actorDTO.ActorUpdateDTO{
-				Id: actorId,
-				Art: actorDTO.ActorArtDTO{
-					VideoIds: []int64{id},
-				},
+			updateDTO := actorDTO.ActorArtDTO{
+				VideoIds: []int64{id},
 			}
-			impl.actorBizService.UpdateActor(ctx, actorId, updateDTO, fileDTO.FileDTO{}, tx)
+			impl.actorBizService.AddArt(ctx, actorId, updateDTO, tx)
 		}
 		// 更新tag作品
 		for _, tagName := range createDTO.Tags {
@@ -192,7 +190,7 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 					VideoIds: []int64{id},
 				},
 			}
-			impl.tagBizService.CreateOrUpdateTag(ctx, tag, tx)
+			impl.tagBizService.AddArtToTag(ctx, tag, tx)
 		}
 	})
 }
@@ -200,41 +198,20 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 func (impl *VideoFacade) UpdateVideo(c *web.Controller) {
 	// 上下文
 	ctx := impl.GetContext(c)
-	// 名称
-	name := impl.GetStringNotEmpty(c, "name")
-	// id
-	id := impl.GetInt64NotInvalid(c, "id")
-	// 描述
-	description := c.GetString("description", "")
-	// 演员
-	actors := impl.GetStringAsInt64List(c, "actors")
-	actors = sets.NewInt64(actors...).List()
-	// tags
-	tags := impl.GetStringAsStringList(c, "tags")
-	tags = sets.NewString(tags...).List()
-	// 权限
-	permissionLevel := c.GetString("permissionLevel", "")
+
+	var dto videoDTO.VideoUpdateDTO
+	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), &dto)
 
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		dto := videoDTO.VideoUpdateDTO{
-			Id:              id,
-			Name:            name,
-			Description:     description,
-			Actors:          actors,
-			Tags:            tags,
-			PermissionLevel: permissionLevel,
-		}
+		id := dto.Id
 		// 更新视频
 		impl.videoBizService.UpdateVideo(ctx, id, dto, tx)
 		// 更新actor作品
 		for _, actorId := range dto.Actors {
-			updateDTO := actorDTO.ActorUpdateDTO{
-				Id: actorId,
-				Art: actorDTO.ActorArtDTO{
-					VideoIds: []int64{id},
-				},
+			artDTO := actorDTO.ActorArtDTO{
+				VideoIds: []int64{id},
 			}
-			impl.actorBizService.UpdateActor(ctx, actorId, updateDTO, fileDTO.FileDTO{}, tx)
+			impl.actorBizService.AddArt(ctx, actorId, artDTO, tx)
 		}
 		// 更新tag作品
 		for _, tagName := range dto.Tags {
@@ -244,7 +221,7 @@ func (impl *VideoFacade) UpdateVideo(c *web.Controller) {
 					VideoIds: []int64{id},
 				},
 			}
-			impl.tagBizService.CreateOrUpdateTag(ctx, updateDTO, tx)
+			impl.tagBizService.AddArtToTag(ctx, updateDTO, tx)
 		}
 	})
 }

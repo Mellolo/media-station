@@ -13,7 +13,8 @@ import (
 )
 
 type TagBizService interface {
-	CreateOrUpdateTag(ctx contextDTO.ContextDTO, dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer)
+	AddArtToTag(ctx contextDTO.ContextDTO, dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer)
+	DeleteArtOfTag(ctx contextDTO.ContextDTO, dto tagDTO.TagDeleteArtDTO, tx ...orm.TxOrmer)
 	RemoveArt(ctx contextDTO.ContextDTO, dto tagDTO.TagRemoveArtDTO, tx ...orm.TxOrmer)
 	DeleteTag(ctx contextDTO.ContextDTO, tagName string, tx ...orm.TxOrmer)
 }
@@ -28,7 +29,7 @@ func NewTagBizService() *TagBizServiceImpl {
 	}
 }
 
-func (impl *TagBizServiceImpl) CreateOrUpdateTag(ctx contextDTO.ContextDTO, dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer) {
+func (impl *TagBizServiceImpl) AddArtToTag(ctx contextDTO.ContextDTO, dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer) {
 	if dto.Name == "" {
 		panic(errors.NewError("tag name cannot be empty"))
 	}
@@ -50,6 +51,25 @@ func (impl *TagBizServiceImpl) CreateOrUpdateTag(ctx contextDTO.ContextDTO, dto 
 	galleryIds := sets.NewInt64(tag.Art.GalleryIds...)
 	galleryIds.Insert(dto.Details.GalleryIds...)
 	tag.Art.GalleryIds = galleryIds.List()
+
+	err = impl.tagMapper.InsertOrUpdate(tag, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("create or update tag [%s] failed", dto.Name)))
+	}
+}
+
+func (impl *TagBizServiceImpl) DeleteArtOfTag(ctx contextDTO.ContextDTO, dto tagDTO.TagDeleteArtDTO, tx ...orm.TxOrmer) {
+	tag, err := impl.tagMapper.SelectByName(dto.Name, tx...)
+	if err != nil && !pkgErrors.Is(err, orm.ErrNoRows) {
+		panic(errors.WrapError(err, "select tag failed"))
+	}
+	if pkgErrors.Is(err, orm.ErrNoRows) {
+		return
+	}
+
+	tag.Art.VideoIds = sets.NewInt64(tag.Art.VideoIds...).Delete(dto.Details.VideoIds...).List()
+
+	tag.Art.GalleryIds = sets.NewInt64(tag.Art.GalleryIds...).Delete(dto.Details.GalleryIds...).List()
 
 	err = impl.tagMapper.InsertOrUpdate(tag, tx...)
 	if err != nil {

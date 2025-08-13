@@ -26,7 +26,8 @@ type ActorBizService interface {
 	CreateActor(ctx contextDTO.ContextDTO, createDTO actorDTO.ActorCreateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
 	UpdateActor(ctx contextDTO.ContextDTO, id int64, updateDTO actorDTO.ActorUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) string
 	RemoveLastCover(ctx contextDTO.ContextDTO, lastCoverUrl string)
-	RemoveArt(ctx contextDTO.ContextDTO, dto actorDTO.ActorRemoveArtDTO, tx ...orm.TxOrmer)
+	AddArt(ctx contextDTO.ContextDTO, id int64, dto actorDTO.ActorArtDTO, tx ...orm.TxOrmer)
+	RemoveArt(ctx contextDTO.ContextDTO, id int64, dto actorDTO.ActorArtDTO, tx ...orm.TxOrmer)
 	DeleteActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) string
 	SearchActor(ctx contextDTO.ContextDTO, dto actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorItemDTO
 }
@@ -111,14 +112,6 @@ func (impl *ActorBizServiceImpl) UpdateActor(ctx contextDTO.ContextDTO, id int64
 		actor.Description = updateDTO.Description
 	}
 
-	videoIds := sets.NewInt64(actor.Art.VideoIds...)
-	videoIds.Insert(updateDTO.Art.VideoIds...)
-	actor.Art.VideoIds = videoIds.List()
-
-	galleryIds := sets.NewInt64(actor.Art.GalleryIds...)
-	galleryIds.Insert(updateDTO.Art.GalleryIds...)
-	actor.Art.GalleryIds = galleryIds.List()
-
 	// 上传封面
 	lastCoverUrl := ""
 	if coverDTO.File != nil {
@@ -140,16 +133,36 @@ func (impl *ActorBizServiceImpl) RemoveLastCover(ctx contextDTO.ContextDTO, last
 	impl.pictureStorage.Remove(bucketActor, lastCoverUrl)
 }
 
-func (impl *ActorBizServiceImpl) RemoveArt(ctx contextDTO.ContextDTO, dto actorDTO.ActorRemoveArtDTO, tx ...orm.TxOrmer) {
-	actor, err := impl.actorMapper.SelectById(dto.Id, tx...)
+func (impl *ActorBizServiceImpl) AddArt(ctx contextDTO.ContextDTO, id int64, dto actorDTO.ActorArtDTO, tx ...orm.TxOrmer) {
+	actor, err := impl.actorMapper.SelectById(id, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("actor [%d] doesn't exist", id)))
+	}
+
+	videoIds := sets.NewInt64(actor.Art.VideoIds...)
+	videoIds.Insert(dto.VideoIds...)
+	actor.Art.VideoIds = videoIds.List()
+
+	galleryIds := sets.NewInt64(actor.Art.GalleryIds...)
+	galleryIds.Insert(dto.GalleryIds...)
+	actor.Art.GalleryIds = galleryIds.List()
+
+	err = impl.actorMapper.Update(id, actor)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("update actor [%d] failed", id)))
+	}
+}
+
+func (impl *ActorBizServiceImpl) RemoveArt(ctx contextDTO.ContextDTO, id int64, dto actorDTO.ActorArtDTO, tx ...orm.TxOrmer) {
+	actor, err := impl.actorMapper.SelectById(id, tx...)
 	if err != nil && !pkgErrors.Is(err, orm.ErrNoRows) {
 		panic(errors.WrapError(err, "select actor failed"))
 	}
-	actor.Art.VideoIds = sets.NewInt64(actor.Art.VideoIds...).Delete(dto.Art.VideoIds...).List()
-	actor.Art.GalleryIds = sets.NewInt64(actor.Art.GalleryIds...).Delete(dto.Art.GalleryIds...).List()
-	err = impl.actorMapper.Update(dto.Id, actor, tx...)
+	actor.Art.VideoIds = sets.NewInt64(actor.Art.VideoIds...).Delete(dto.VideoIds...).List()
+	actor.Art.GalleryIds = sets.NewInt64(actor.Art.GalleryIds...).Delete(dto.GalleryIds...).List()
+	err = impl.actorMapper.Update(id, actor, tx...)
 	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("remove artwork for actor [%s] failed", dto.Id)))
+		panic(errors.WrapError(err, fmt.Sprintf("remove artwork for actor [%s] failed", id)))
 	}
 }
 

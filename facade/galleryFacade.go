@@ -135,13 +135,10 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller, ch chan string) {
 		id := impl.galleryBizService.CreateGallery(ctx, createDTO, galleryFileDTOList, ch)
 		// 更新演员作品
 		for _, actorId := range createDTO.Actors {
-			updateDTO := actorDTO.ActorUpdateDTO{
-				Id: actorId,
-				Art: actorDTO.ActorArtDTO{
-					GalleryIds: []int64{id},
-				},
+			artDTO := actorDTO.ActorArtDTO{
+				GalleryIds: []int64{id},
 			}
-			impl.actorBizService.UpdateActor(ctx, actorId, updateDTO, fileDTO.FileDTO{}, tx)
+			impl.actorBizService.AddArt(ctx, actorId, artDTO, tx)
 		}
 		// 更新tag作品
 		for _, tagName := range createDTO.Tags {
@@ -151,7 +148,7 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller, ch chan string) {
 					GalleryIds: []int64{id},
 				},
 			}
-			impl.tagBizService.CreateOrUpdateTag(ctx, tag, tx)
+			impl.tagBizService.AddArtToTag(ctx, tag, tx)
 		}
 	})
 }
