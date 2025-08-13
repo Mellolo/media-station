@@ -97,14 +97,3 @@ func (c *VideoAuthController) Update() {
 		return templates.NewJsonTemplate200(nil)
 	})
 }
-
-//// @router play/:id [get]
-//func (c *VideoAuthController) Play() {
-//	templates.ServeVideoTemplate(c.Ctx, func() templates.VideoTemplate {
-//		vo := facade.NewVideoFacade().PlayVideo(&c.Controller)
-//		return templates.VideoTemplate{
-//			Reader: vo.Reader,
-//			Header: vo.Header,
-//		}
-//	})
-//}
