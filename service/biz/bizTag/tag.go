@@ -13,8 +13,8 @@ import (
 )
 
 type TagBizService interface {
-	AddArtToTag(ctx contextDTO.ContextDTO, dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer)
-	DeleteArtOfTag(ctx contextDTO.ContextDTO, dto tagDTO.TagDeleteArtDTO, tx ...orm.TxOrmer)
+	AddArt(ctx contextDTO.ContextDTO, dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer)
+	DeleteArt(ctx contextDTO.ContextDTO, dto tagDTO.TagDeleteArtDTO, tx ...orm.TxOrmer)
 	RemoveArt(ctx contextDTO.ContextDTO, dto tagDTO.TagRemoveArtDTO, tx ...orm.TxOrmer)
 	DeleteTag(ctx contextDTO.ContextDTO, tagName string, tx ...orm.TxOrmer)
 }
@@ -29,7 +29,7 @@ func NewTagBizService() *TagBizServiceImpl {
 	}
 }
 
-func (impl *TagBizServiceImpl) AddArtToTag(ctx contextDTO.ContextDTO, dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer) {
+func (impl *TagBizServiceImpl) AddArt(ctx contextDTO.ContextDTO, dto tagDTO.TagCreateOrUpdateDTO, tx ...orm.TxOrmer) {
 	if dto.Name == "" {
 		panic(errors.NewError("tag name cannot be empty"))
 	}
@@ -58,7 +58,7 @@ func (impl *TagBizServiceImpl) AddArtToTag(ctx contextDTO.ContextDTO, dto tagDTO
 	}
 }
 
-func (impl *TagBizServiceImpl) DeleteArtOfTag(ctx contextDTO.ContextDTO, dto tagDTO.TagDeleteArtDTO, tx ...orm.TxOrmer) {
+func (impl *TagBizServiceImpl) DeleteArt(ctx contextDTO.ContextDTO, dto tagDTO.TagDeleteArtDTO, tx ...orm.TxOrmer) {
 	tag, err := impl.tagMapper.SelectByName(dto.Name, tx...)
 	if err != nil && !pkgErrors.Is(err, orm.ErrNoRows) {
 		panic(errors.WrapError(err, "select tag failed"))

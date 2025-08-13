@@ -185,12 +185,13 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 		// 更新tag作品
 		for _, tagName := range createDTO.Tags {
 			tag := tagDTO.TagCreateOrUpdateDTO{
-				Name: tagName,
+				Name:    tagName,
+				Creator: uploader,
 				Details: tagDTO.TagDetailsDTO{
 					VideoIds: []int64{id},
 				},
 			}
-			impl.tagBizService.AddArtToTag(ctx, tag, tx)
+			impl.tagBizService.AddArt(ctx, tag, tx)
 		}
 	})
 }
@@ -221,7 +222,7 @@ func (impl *VideoFacade) UpdateVideo(c *web.Controller) {
 					VideoIds: []int64{id},
 				},
 			}
-			impl.tagBizService.AddArtToTag(ctx, updateDTO, tx)
+			impl.tagBizService.AddArt(ctx, updateDTO, tx)
 		}
 	})
 }
