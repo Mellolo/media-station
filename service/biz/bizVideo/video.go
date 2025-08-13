@@ -128,7 +128,7 @@ func (impl *VideoBizServiceImpl) SearchVideo(ctx contextDTO.ContextDTO, searchDT
 	}
 	var items []videoDTO.VideoItemDTO
 	for _, do := range videoDOList {
-		if impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
+		if !impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
 			continue
 		}
 		if len(searchDTO.Actors) > 0 && !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
@@ -172,7 +172,7 @@ func (impl *VideoBizServiceImpl) SearchVideoByActor(ctx contextDTO.ContextDTO, a
 			continue
 		}
 
-		if impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
+		if !impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
 			continue
 		}
 
@@ -210,7 +210,7 @@ func (impl *VideoBizServiceImpl) SearchVideoByTag(ctx contextDTO.ContextDTO, tag
 			continue
 		}
 
-		if impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
+		if !impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
 			continue
 		}
 

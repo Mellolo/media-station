@@ -94,7 +94,7 @@ func (impl *GalleryBizServiceImpl) SearchGallery(ctx contextDTO.ContextDTO, sear
 	// 再筛选，并转化为DTO
 	var items []galleryDTO.GalleryItemDTO
 	for _, do := range galleryDOList {
-		if impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
+		if !impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
 			continue
 		}
 		if len(searchDTO.Actors) > 0 && !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
