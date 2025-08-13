@@ -178,4 +178,13 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
+	beego.GlobalControllerRouter["media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoController"],
+		beego.ControllerComments{
+			Method:           "SearchVideoByTag",
+			Router:           `search/tag`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
 }
