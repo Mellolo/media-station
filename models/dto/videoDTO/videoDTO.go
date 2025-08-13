@@ -20,7 +20,7 @@ type VideoUpdateDTO struct {
 	Id              int64    `json:"id"`
 	Name            string   `json:"name"`
 	Description     string   `json:"description"`
-	Actors          []int64  `json:"actors"`
+	Actors          []int64  `json:"actorIds"`
 	Tags            []string `json:"tags"`
 	PermissionLevel string   `json:"permissionLevel"`
 }
