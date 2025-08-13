@@ -93,8 +93,7 @@ func (c *VideoAuthController) Upload() {
 // @router update [post]
 func (c *VideoAuthController) Update() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
-		facade.NewVideoFacade().UploadVideo()
-
+		facade.NewVideoFacade().UpdateVideo(&c.Controller)
 		return templates.NewJsonTemplate200(nil)
 	})
 }
