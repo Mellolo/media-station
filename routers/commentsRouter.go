@@ -135,6 +135,15 @@ func init() {
 
 	beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"],
 		beego.ControllerComments{
+			Method:           "Delete",
+			Router:           `delete/:id`,
+			AllowHTTPMethods: []string{"delete"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"],
+		beego.ControllerComments{
 			Method:           "Update",
 			Router:           `update`,
 			AllowHTTPMethods: []string{"post"},

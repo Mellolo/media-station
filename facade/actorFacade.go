@@ -9,20 +9,23 @@ import (
 	"media-station/models/vo/actorVO"
 	"media-station/models/vo/videoVO"
 	"media-station/service/biz/bizActor"
+	"media-station/service/biz/bizGallery"
 	"media-station/service/biz/bizVideo"
 	"media-station/storage/db"
 )
 
 type ActorFacade struct {
 	AbstractFacade
-	actorBizService bizActor.ActorBizService
-	videoBizService bizVideo.VideoBizService
+	actorBizService   bizActor.ActorBizService
+	videoBizService   bizVideo.VideoBizService
+	galleryBizService bizGallery.GalleryBizService
 }
 
 func NewActorFacade() *ActorFacade {
 	return &ActorFacade{
-		actorBizService: bizActor.NewActorBizService(),
-		videoBizService: bizVideo.NewVideoBizService(),
+		actorBizService:   bizActor.NewActorBizService(),
+		videoBizService:   bizVideo.NewVideoBizService(),
+		galleryBizService: bizGallery.NewGalleryBizService(),
 	}
 }
 
@@ -145,10 +148,10 @@ func (impl *ActorFacade) UpdateActor(c *web.Controller) {
 	name := impl.GetStringNotEmpty(c, "name")
 	// 描述
 	description := c.GetString("description", "")
-
 	// 获取封面文件
 	reader, size := impl.GetFile(c, "cover")
 
+	var lastCoverUrl string
 	db.DoTransaction(func(tx orm.TxOrmer) {
 		dto := actorDTO.ActorUpdateDTO{
 			Id:          id,
@@ -161,9 +164,12 @@ func (impl *ActorFacade) UpdateActor(c *web.Controller) {
 			Size: size,
 		}
 
-		lastCoverUrl := impl.actorBizService.UpdateActor(ctx, dto.Id, dto, coverDTO, tx)
-		impl.actorBizService.RemoveLastCover(ctx, lastCoverUrl)
+		lastCoverUrl = impl.actorBizService.UpdateActor(ctx, dto.Id, dto, coverDTO, tx)
 	})
+
+	if lastCoverUrl != "" {
+		impl.actorBizService.RemoveLastCover(ctx, lastCoverUrl)
+	}
 
 }
 
@@ -173,9 +179,20 @@ func (impl *ActorFacade) DeleteActor(c *web.Controller) {
 	// id
 	id := impl.GetRestfulParamInt64(c, ":id")
 
+	var lastCoverUrl string
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		lastCoverUrl := impl.actorBizService.DeleteActor(ctx, id, tx)
-		impl.actorBizService.RemoveLastCover(ctx, lastCoverUrl)
+		page := impl.actorBizService.DeleteActor(ctx, id, tx)
+		lastCoverUrl = page.CoverUrl
+
+		for _, videoId := range page.Art.VideoIds {
+			impl.videoBizService.RemoveActor(ctx, videoId, []int64{id}, tx)
+		}
+
+		for _, galleryId := range page.Art.GalleryIds {
+			impl.galleryBizService.RemoveActor(ctx, galleryId, []int64{id}, tx)
+		}
 	})
+
+	impl.actorBizService.RemoveLastCover(ctx, lastCoverUrl)
 
 }

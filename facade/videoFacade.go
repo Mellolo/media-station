@@ -227,6 +227,44 @@ func (impl *VideoFacade) UpdateVideo(c *web.Controller) {
 	})
 }
 
+func (impl *VideoFacade) DeleteVideo(c *web.Controller) {
+	// 上下文
+	ctx := impl.GetContext(c)
+	// id
+	id := impl.GetRestfulParamInt64(c, ":id")
+
+	var coverUrl, videoUrl string
+	db.DoTransaction(func(tx orm.TxOrmer) {
+		// 更新视频
+		page := impl.videoBizService.DeleteVideo(ctx, id, tx)
+		coverUrl, videoUrl = page.CoverUrl, page.VideoUrl
+		// 更新actor作品
+		for _, actorId := range page.Actors {
+			artDTO := actorDTO.ActorArtDTO{
+				VideoIds: []int64{id},
+			}
+			impl.actorBizService.RemoveArt(ctx, actorId, artDTO, tx)
+		}
+		// 更新tag作品
+		for _, tagName := range page.Tags {
+			artDTO := tagDTO.TagRemoveArtDTO{
+				Name: tagName,
+				Details: tagDTO.TagDetailsDTO{
+					VideoIds: []int64{id},
+				},
+			}
+			impl.tagBizService.RemoveArt(ctx, artDTO, tx)
+		}
+	})
+
+	if coverUrl != "" {
+		impl.videoBizService.RemoveVideoCover(ctx, coverUrl)
+	}
+	if videoUrl != "" {
+		impl.videoBizService.RemoveVideoFile(ctx, videoUrl)
+	}
+}
+
 func (impl *VideoFacade) PlayVideo(c *web.Controller) videoVO.VideoFileVO {
 	// 上下文
 	ctx := impl.GetContext(c)

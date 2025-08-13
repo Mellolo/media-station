@@ -27,7 +27,9 @@ type GalleryBizService interface {
 	SearchGallery(ctx contextDTO.ContextDTO, searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO
 	CreateGallery(ctx contextDTO.ContextDTO, createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
 	UpdateGallery(ctx contextDTO.ContextDTO, id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer)
-	DeleteGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) (string, int)
+	RemoveActor(ctx contextDTO.ContextDTO, id int64, actorIds []int64, tx ...orm.TxOrmer)
+	RemoveTag(ctx contextDTO.ContextDTO, id int64, tags []string, tx ...orm.TxOrmer)
+	DeleteGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO
 	ShowGalleryPage(ctx contextDTO.ContextDTO, id int64, page int) galleryDTO.PictureFileDTO
 
 	RemoveGalleryDir(ctx contextDTO.ContextDTO, dir string, count int)
@@ -168,18 +170,10 @@ func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, id i
 	}
 
 	// 更新gallery
-	if updateDTO.Name != "" {
-		gallery.Name = updateDTO.Name
-	}
-	if updateDTO.Description != "" {
-		gallery.Description = updateDTO.Description
-	}
-	if len(updateDTO.Actors) > 0 {
-		gallery.Actors = updateDTO.Actors
-	}
-	if len(updateDTO.Tags) > 0 {
-		gallery.Tags = updateDTO.Tags
-	}
+	gallery.Name = updateDTO.Name
+	gallery.Description = updateDTO.Description
+	gallery.Actors = updateDTO.Actors
+	gallery.Tags = updateDTO.Tags
 	if sets.NewString(enum.PermissionLevels...).Has(updateDTO.PermissionLevel) {
 		gallery.PermissionLevel = updateDTO.PermissionLevel
 	}
@@ -191,7 +185,37 @@ func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, id i
 	}
 }
 
-func (impl *GalleryBizServiceImpl) DeleteGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) (string, int) {
+func (impl *GalleryBizServiceImpl) RemoveActor(ctx contextDTO.ContextDTO, id int64, actorIds []int64, tx ...orm.TxOrmer) {
+	gallery, err := impl.galleryMapper.SelectById(id, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
+	}
+
+	gallery.Actors = sets.NewInt64(gallery.Actors...).Delete(actorIds...).List()
+
+	// 更新写入数据库
+	err = impl.galleryMapper.Update(id, gallery, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("update gallery [%d] failed", id)))
+	}
+}
+
+func (impl *GalleryBizServiceImpl) RemoveTag(ctx contextDTO.ContextDTO, id int64, tags []string, tx ...orm.TxOrmer) {
+	gallery, err := impl.galleryMapper.SelectById(id, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
+	}
+
+	gallery.Tags = sets.NewString(gallery.Tags...).Delete(tags...).List()
+
+	// 更新写入数据库
+	err = impl.galleryMapper.Update(id, gallery, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("update gallery [%d] failed", id)))
+	}
+}
+
+func (impl *GalleryBizServiceImpl) DeleteGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO {
 	gallery, err := impl.galleryMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
@@ -201,7 +225,17 @@ func (impl *GalleryBizServiceImpl) DeleteGallery(ctx contextDTO.ContextDTO, id i
 		panic(errors.WrapError(err, fmt.Sprintf("delete gallery [%d] failed", id)))
 	}
 
-	return gallery.GalleryUrl, gallery.PageCount
+	return galleryDTO.GalleryPageDTO{
+		Id:              gallery.Id,
+		Name:            gallery.Name,
+		Description:     gallery.Description,
+		Actors:          gallery.Actors,
+		Tags:            gallery.Tags,
+		Uploader:        gallery.Uploader,
+		CoverUrl:        gallery.CoverUrl,
+		GalleryUrl:      gallery.GalleryUrl,
+		PermissionLevel: gallery.PermissionLevel,
+	}
 }
 
 func (impl *GalleryBizServiceImpl) ShowGalleryPage(ctx contextDTO.ContextDTO, id int64, page int) galleryDTO.PictureFileDTO {

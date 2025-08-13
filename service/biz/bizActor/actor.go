@@ -28,7 +28,7 @@ type ActorBizService interface {
 	RemoveLastCover(ctx contextDTO.ContextDTO, lastCoverUrl string)
 	AddArt(ctx contextDTO.ContextDTO, id int64, dto actorDTO.ActorArtDTO, tx ...orm.TxOrmer)
 	RemoveArt(ctx contextDTO.ContextDTO, id int64, dto actorDTO.ActorArtDTO, tx ...orm.TxOrmer)
-	DeleteActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) string
+	DeleteActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorPageDTO
 	SearchActor(ctx contextDTO.ContextDTO, dto actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorItemDTO
 }
 
@@ -166,7 +166,7 @@ func (impl *ActorBizServiceImpl) RemoveArt(ctx contextDTO.ContextDTO, id int64, 
 	}
 }
 
-func (impl *ActorBizServiceImpl) DeleteActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) string {
+func (impl *ActorBizServiceImpl) DeleteActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorPageDTO {
 	actor, err := impl.actorMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("actor [%d] doesn't exist", id)))
@@ -175,7 +175,17 @@ func (impl *ActorBizServiceImpl) DeleteActor(ctx contextDTO.ContextDTO, id int64
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("delete actor [%d] failed", id)))
 	}
-	return actor.CoverUrl
+	return actorDTO.ActorPageDTO{
+		Id:          actor.Id,
+		Name:        actor.Name,
+		Description: actor.Description,
+		Creator:     actor.Creator,
+		CoverUrl:    actor.CoverUrl,
+		Art: actorDTO.ActorArtDTO{
+			VideoIds:   actor.Art.VideoIds,
+			GalleryIds: actor.Art.GalleryIds,
+		},
+	}
 }
 
 func (impl *ActorBizServiceImpl) SearchActor(ctx contextDTO.ContextDTO, searchDTO actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorItemDTO {

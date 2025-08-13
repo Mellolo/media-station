@@ -39,7 +39,9 @@ type VideoBizService interface {
 	SearchVideoByTag(ctx contextDTO.ContextDTO, tagName string, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
 	CreateVideo(ctx contextDTO.ContextDTO, createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
 	UpdateVideo(ctx contextDTO.ContextDTO, id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer)
-	DeleteVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) (string, string)
+	RemoveActor(ctx contextDTO.ContextDTO, id int64, actorIds []int64, tx ...orm.TxOrmer)
+	RemoveTag(ctx contextDTO.ContextDTO, id int64, tags []string, tx ...orm.TxOrmer)
+	DeleteVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
 	PlayVideo(ctx contextDTO.ContextDTO, id int64, rangeHeader ...string) videoDTO.VideoFileDTO
 
 	RemoveVideoCover(ctx contextDTO.ContextDTO, path string)
@@ -287,7 +289,39 @@ func (impl *VideoBizServiceImpl) UpdateVideo(ctx contextDTO.ContextDTO, id int64
 	}
 }
 
-func (impl *VideoBizServiceImpl) DeleteVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) (string, string) {
+func (impl *VideoBizServiceImpl) RemoveActor(ctx contextDTO.ContextDTO, id int64, actorIds []int64, tx ...orm.TxOrmer) {
+	video, err := impl.videoMapper.SelectById(id, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
+	}
+
+	// 更新video
+	video.Actors = sets.NewInt64(video.Actors...).Delete(actorIds...).List()
+
+	// 更新写入数据库
+	err = impl.videoMapper.Update(id, video, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("update video [%d] failed", id)))
+	}
+}
+
+func (impl *VideoBizServiceImpl) RemoveTag(ctx contextDTO.ContextDTO, id int64, tags []string, tx ...orm.TxOrmer) {
+	video, err := impl.videoMapper.SelectById(id, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
+	}
+
+	// 更新video
+	video.Tags = sets.NewString(video.Tags...).Delete(tags...).List()
+
+	// 更新写入数据库
+	err = impl.videoMapper.Update(id, video, tx...)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("update video [%d] failed", id)))
+	}
+}
+
+func (impl *VideoBizServiceImpl) DeleteVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO {
 	video, err := impl.videoMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
@@ -297,7 +331,17 @@ func (impl *VideoBizServiceImpl) DeleteVideo(ctx contextDTO.ContextDTO, id int64
 		panic(errors.WrapError(err, fmt.Sprintf("delete video [%d] failed", id)))
 	}
 
-	return video.CoverUrl, video.VideoUrl
+	return videoDTO.VideoPageDTO{
+		Id:              video.Id,
+		Name:            video.Name,
+		Description:     video.Description,
+		Actors:          video.Actors,
+		Tags:            video.Tags,
+		Uploader:        video.Uploader,
+		CoverUrl:        video.CoverUrl,
+		VideoUrl:        video.VideoUrl,
+		PermissionLevel: video.PermissionLevel,
+	}
 }
 
 func (impl *VideoBizServiceImpl) PlayVideo(ctx contextDTO.ContextDTO, id int64, rangeHeader ...string) videoDTO.VideoFileDTO {

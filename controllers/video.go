@@ -97,3 +97,11 @@ func (c *VideoAuthController) Update() {
 		return templates.NewJsonTemplate200(nil)
 	})
 }
+
+// @router delete/:id [delete]
+func (c *VideoAuthController) Delete() {
+	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
+		facade.NewVideoFacade().DeleteVideo(&c.Controller)
+		return templates.NewJsonTemplate200(nil)
+	})
+}
