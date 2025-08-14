@@ -1,4 +1,4 @@
-package tagDAO
+package performDAO
 
 import (
 	"github.com/beego/beego/v2/client/orm"
@@ -6,21 +6,21 @@ import (
 )
 
 const (
-	TableTag = "tag"
+	TablePerform = "perform"
 )
 
-type TagRecord struct {
+type PerformRecord struct {
 	daoCommon.CommonColumn `orm:"inline"`
 
 	ArtType string `orm:"column(art_type)"`
 	ArtId   int64  `orm:"column(art_id)"`
-	Tag     string `orm:"column(tag)"`
+	ActorId int64  `orm:"column(actor_id)"`
 }
 
-func (t *TagRecord) TableName() string {
-	return TableTag
+func (a *PerformRecord) TableName() string {
+	return TablePerform
 }
 
 func init() {
-	orm.RegisterModel(new(TagRecord))
+	orm.RegisterModel(new(PerformRecord))
 }

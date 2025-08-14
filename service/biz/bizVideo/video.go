@@ -21,6 +21,7 @@ import (
 	"media-station/storage/db"
 	"media-station/storage/oss"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -32,16 +33,13 @@ const (
 )
 
 type VideoBizService interface {
-	GetVideoPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
+	GetVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoDTO
 	GetVideoCover(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoCoverDTO
-	SearchVideo(ctx contextDTO.ContextDTO, searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
-	SearchVideoByActor(ctx contextDTO.ContextDTO, actorId int64, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
-	SearchVideoByTag(ctx contextDTO.ContextDTO, tagName string, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO
+	SearchVideo(ctx contextDTO.ContextDTO, searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoDTO
+	SearchVideoByKeyword(ctx contextDTO.ContextDTO, keyword string, tx ...orm.TxOrmer) []videoDTO.VideoDTO
 	CreateVideo(ctx contextDTO.ContextDTO, createDTO videoDTO.VideoCreateDTO, videoDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
-	UpdateVideo(ctx contextDTO.ContextDTO, id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
-	RemoveActor(ctx contextDTO.ContextDTO, id int64, actorIds []int64, tx ...orm.TxOrmer)
-	RemoveTag(ctx contextDTO.ContextDTO, id int64, tags []string, tx ...orm.TxOrmer)
-	DeleteVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO
+	UpdateVideo(ctx contextDTO.ContextDTO, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) videoDTO.VideoDTO
+	DeleteVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoDTO
 	PlayVideo(ctx contextDTO.ContextDTO, id int64, rangeHeader ...string) videoDTO.VideoFileDTO
 
 	RemoveVideoCover(ctx contextDTO.ContextDTO, path string)
@@ -51,8 +49,6 @@ type VideoBizService interface {
 func NewVideoBizService() *VideoBizServiceImpl {
 	return &VideoBizServiceImpl{
 		userMapper:              db.NewUserMapper(),
-		actorMapper:             db.NewActorMapper(),
-		tagMapper:               db.NewTagMapper(),
 		videoMapper:             db.NewVideoMapper(),
 		idGenerator:             generator.NewIdGenerator(),
 		pictureStorage:          oss.NewPictureStorage(),
@@ -64,8 +60,6 @@ func NewVideoBizService() *VideoBizServiceImpl {
 
 type VideoBizServiceImpl struct {
 	userMapper       db.UserMapper
-	actorMapper      db.ActorMapper
-	tagMapper        db.TagMapper
 	videoMapper      db.VideoMapper
 	idGenerator      generator.IdGenerator
 	pictureStorage   oss.PictureStorage
@@ -75,22 +69,12 @@ type VideoBizServiceImpl struct {
 	permissionDomainService domainPermission.PermissionDomainService
 }
 
-func (impl *VideoBizServiceImpl) GetVideoPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO {
+func (impl *VideoBizServiceImpl) GetVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoDTO {
 	video, err := impl.videoMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("get video [%d] failed", id)))
 	}
-	return videoDTO.VideoPageDTO{
-		Id:              video.Id,
-		Name:            video.Name,
-		Description:     video.Description,
-		Actors:          video.Actors,
-		Tags:            video.Tags,
-		Uploader:        video.Uploader,
-		CoverUrl:        video.CoverUrl,
-		VideoUrl:        video.VideoUrl,
-		PermissionLevel: video.PermissionLevel,
-	}
+	return impl.convertVideoDO2VideoDTO(video)
 }
 
 func (impl *VideoBizServiceImpl) GetVideoCover(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoCoverDTO {
@@ -106,123 +90,72 @@ func (impl *VideoBizServiceImpl) GetVideoCover(ctx contextDTO.ContextDTO, id int
 	}
 }
 
-func (impl *VideoBizServiceImpl) SearchVideo(ctx contextDTO.ContextDTO, searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
-	// 读取数据库
-	var videoDOList []*videoDO.VideoDO
-	if searchDTO.Keyword == "" {
+func (impl *VideoBizServiceImpl) SearchVideo(ctx contextDTO.ContextDTO, searchDTO videoDTO.VideoSearchDTO, tx ...orm.TxOrmer) []videoDTO.VideoDTO {
+	var videoDOList []videoDO.VideoDO
+	for _, id := range searchDTO.Ids {
+		do, err := impl.videoMapper.SelectById(id, tx...)
+		if err != nil {
+			panic(errors.WrapError(err, fmt.Sprintf("select video by id [%d] error", id)))
+		}
+		if searchDTO.Keyword != "" && !strings.Contains(do.Name, searchDTO.Keyword) && !strings.Contains(do.Description, searchDTO.Keyword) {
+			continue
+		}
+		videoDOList = append(videoDOList, do)
+	}
+
+	// 再筛选，并转化为DTO
+	var user userDO.UserDO
+	if ctx.UserClaim.Username != "" {
+		user, _ = impl.userMapper.SelectByUsername(ctx.UserClaim.Username, tx...)
+	}
+	var items []videoDTO.VideoDTO
+	for _, do := range videoDOList {
+		if !impl.permissionDomainService.IsVisible(user, do.Uploader, do.PermissionLevel) {
+			continue
+		}
+
+		item := impl.convertVideoDO2VideoDTO(do)
+		if item.Duration == 0 {
+			item.Duration = impl.getVideoDuration(do.Id, do.VideoUrl)
+		}
+		items = append(items, item)
+	}
+
+	return items
+}
+
+func (impl *VideoBizServiceImpl) SearchVideoByKeyword(ctx contextDTO.ContextDTO, keyword string, tx ...orm.TxOrmer) []videoDTO.VideoDTO {
+	var videoDOList []videoDO.VideoDO
+	if keyword != "" {
+		doList, err := impl.videoMapper.SelectByKeyword(keyword)
+		if err != nil {
+			panic(errors.WrapError(err, fmt.Sprintf("select video by keyword [%s] error", keyword)))
+		}
+		videoDOList = append(videoDOList, doList...)
+	} else {
 		doList, err := impl.videoMapper.SelectAllLimit(200, tx...)
 		if err != nil {
 			panic(errors.WrapError(err, "select all video error"))
 		}
 		videoDOList = append(videoDOList, doList...)
-	} else {
-		doList, err := impl.videoMapper.SelectByKeyword(searchDTO.Keyword)
-		if err != nil {
-			panic(errors.WrapError(err, fmt.Sprintf("select video by keyword [%s] error", searchDTO.Keyword)))
-		}
-		videoDOList = append(videoDOList, doList...)
 	}
 
 	// 再筛选，并转化为DTO
-	var user = new(userDO.UserDO)
+	var user userDO.UserDO
 	if ctx.UserClaim.Username != "" {
 		user, _ = impl.userMapper.SelectByUsername(ctx.UserClaim.Username, tx...)
 	}
-	var items []videoDTO.VideoItemDTO
+	var items []videoDTO.VideoDTO
 	for _, do := range videoDOList {
-		if !impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
-			continue
-		}
-		if len(searchDTO.Actors) > 0 && !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
-			continue
-		}
-		if len(searchDTO.Tags) > 0 && !sets.NewString(do.Tags...).HasAll(searchDTO.Tags...) {
+		if !impl.permissionDomainService.IsVisible(user, do.Uploader, do.PermissionLevel) {
 			continue
 		}
 
-		items = append(items, videoDTO.VideoItemDTO{
-			Id:              do.Id,
-			Name:            do.Name,
-			CoverUrl:        do.CoverUrl,
-			Duration:        impl.getVideoDuration(do.Id, do.VideoUrl),
-			PermissionLevel: do.PermissionLevel,
-		})
-	}
-
-	return items
-}
-
-func (impl *VideoBizServiceImpl) SearchVideoByActor(ctx contextDTO.ContextDTO, actorId int64, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
-	actor, actorErr := impl.actorMapper.SelectById(actorId, tx...)
-	if actorErr != nil || actor == nil {
-		logs.Error("get actor [%d] failed", actorId) // 不报错，记录日志
-		return []videoDTO.VideoItemDTO{}
-	}
-
-	var user = new(userDO.UserDO)
-	if ctx.UserClaim.Username != "" {
-		user, _ = impl.userMapper.SelectByUsername(ctx.UserClaim.Username, tx...)
-	}
-	// 筛选，并转化为DTO
-	var items []videoDTO.VideoItemDTO
-	for _, videoId := range actor.Art.VideoIds {
-		do, videoErr := impl.videoMapper.SelectById(videoId, tx...)
-		if videoErr != nil {
-			logs.Error("select video [%d] error", videoId) // 不报错，记录日志
+		item := impl.convertVideoDO2VideoDTO(do)
+		if item.Duration == 0 {
+			item.Duration = impl.getVideoDuration(do.Id, do.VideoUrl)
 		}
-		if do == nil {
-			continue
-		}
-
-		if !impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
-			continue
-		}
-
-		items = append(items, videoDTO.VideoItemDTO{
-			Id:              do.Id,
-			Name:            do.Name,
-			CoverUrl:        do.CoverUrl,
-			Duration:        impl.getVideoDuration(do.Id, do.VideoUrl),
-			PermissionLevel: do.PermissionLevel,
-		})
-	}
-
-	return items
-}
-
-func (impl *VideoBizServiceImpl) SearchVideoByTag(ctx contextDTO.ContextDTO, tagName string, tx ...orm.TxOrmer) []videoDTO.VideoItemDTO {
-	tag, tagErr := impl.tagMapper.SelectByName(tagName, tx...)
-	if tagErr != nil || tag == nil {
-		logs.Error("get tag [%d] failed", tagName) // 不报错，记录日志
-		return []videoDTO.VideoItemDTO{}
-	}
-
-	var user = new(userDO.UserDO)
-	if ctx.UserClaim.Username != "" {
-		user, _ = impl.userMapper.SelectByUsername(ctx.UserClaim.Username, tx...)
-	}
-	// 筛选，并转化为DTO
-	var items []videoDTO.VideoItemDTO
-	for _, videoId := range tag.Art.VideoIds {
-		do, videoErr := impl.videoMapper.SelectById(videoId, tx...)
-		if videoErr != nil {
-			logs.Error("select video [%d] error", videoId) // 不报错，记录日志
-		}
-		if do == nil {
-			continue
-		}
-
-		if !impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
-			continue
-		}
-
-		items = append(items, videoDTO.VideoItemDTO{
-			Id:              do.Id,
-			Name:            do.Name,
-			CoverUrl:        do.CoverUrl,
-			Duration:        impl.getVideoDuration(do.Id, do.VideoUrl),
-			PermissionLevel: do.PermissionLevel,
-		})
+		items = append(items, item)
 	}
 
 	return items
@@ -233,11 +166,9 @@ func (impl *VideoBizServiceImpl) CreateVideo(ctx contextDTO.ContextDTO, createDT
 		panic(errors.NewError("video file is empty"))
 	}
 
-	video := &videoDO.VideoDO{
+	video := videoDO.VideoDO{
 		Name:        createDTO.Name,
 		Description: createDTO.Description,
-		Actors:      createDTO.Actors,
-		Tags:        createDTO.Tags,
 		Uploader:    createDTO.Uploader,
 	}
 	if sets.NewString(enum.PermissionLevels...).Has(createDTO.PermissionLevel) {
@@ -257,8 +188,18 @@ func (impl *VideoBizServiceImpl) CreateVideo(ctx contextDTO.ContextDTO, createDT
 	filename = impl.idGenerator.GenerateId(videoCoverIdGenerateKey)
 	path = fmt.Sprintf("covers/%s.jpg", filename)
 	data, err := videoUtil.CaptureScreenshotFromStreamURL(url)
+	if err != nil {
+		panic(errors.WrapError(err, "capture video thumbnail failed"))
+	}
 	impl.pictureStorage.Upload(bucketVideo, path, io.NopCloser(bytes.NewReader(data)), int64(len(data)))
 	video.CoverUrl = path
+
+	// 时长
+	seconds, err := videoUtil.GetVideoDuration(impl.videoStorage.GetStreamURL(bucketVideo, video.VideoUrl, time.Minute))
+	if err != nil {
+		panic(errors.WrapError(err, "get video duration failed"))
+	}
+	video.Duration = seconds
 
 	id, err := impl.videoMapper.Insert(video, tx...)
 	if err != nil {
@@ -267,74 +208,30 @@ func (impl *VideoBizServiceImpl) CreateVideo(ctx contextDTO.ContextDTO, createDT
 	return id
 }
 
-func (impl *VideoBizServiceImpl) UpdateVideo(ctx contextDTO.ContextDTO, id int64, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) videoDTO.VideoPageDTO {
-	video, err := impl.videoMapper.SelectById(id, tx...)
+func (impl *VideoBizServiceImpl) UpdateVideo(ctx contextDTO.ContextDTO, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) videoDTO.VideoDTO {
+	video, err := impl.videoMapper.SelectById(updateDTO.Id, tx...)
 	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
+		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", updateDTO.Id)))
 	}
-	origin := video.DeepCopy()
+	origin := *video.DeepCopy()
 
 	// 更新video
 	video.Name = updateDTO.Name
 	video.Description = updateDTO.Description
-	video.Actors = updateDTO.ActorIds
-	video.Tags = updateDTO.Tags
 	if sets.NewString(enum.PermissionLevels...).Has(updateDTO.PermissionLevel) {
 		video.PermissionLevel = updateDTO.PermissionLevel
 	}
 
 	// 更新写入数据库
-	err = impl.videoMapper.Update(id, video, tx...)
+	err = impl.videoMapper.Update(updateDTO.Id, video, tx...)
 	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("update video [%d] failed", id)))
+		panic(errors.WrapError(err, fmt.Sprintf("update video [%d] failed", updateDTO.Id)))
 	}
 
-	return videoDTO.VideoPageDTO{
-		Id:              origin.Id,
-		Name:            origin.Name,
-		Description:     origin.Description,
-		Actors:          origin.Actors,
-		Tags:            origin.Tags,
-		Uploader:        origin.Uploader,
-		CoverUrl:        origin.CoverUrl,
-		VideoUrl:        origin.VideoUrl,
-		PermissionLevel: origin.PermissionLevel,
-	}
+	return impl.convertVideoDO2VideoDTO(origin)
 }
 
-func (impl *VideoBizServiceImpl) RemoveActor(ctx contextDTO.ContextDTO, id int64, actorIds []int64, tx ...orm.TxOrmer) {
-	video, err := impl.videoMapper.SelectById(id, tx...)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
-	}
-
-	// 更新video
-	video.Actors = sets.NewInt64(video.Actors...).Delete(actorIds...).List()
-
-	// 更新写入数据库
-	err = impl.videoMapper.Update(id, video, tx...)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("update video [%d] failed", id)))
-	}
-}
-
-func (impl *VideoBizServiceImpl) RemoveTag(ctx contextDTO.ContextDTO, id int64, tags []string, tx ...orm.TxOrmer) {
-	video, err := impl.videoMapper.SelectById(id, tx...)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
-	}
-
-	// 更新video
-	video.Tags = sets.NewString(video.Tags...).Delete(tags...).List()
-
-	// 更新写入数据库
-	err = impl.videoMapper.Update(id, video, tx...)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("update video [%d] failed", id)))
-	}
-}
-
-func (impl *VideoBizServiceImpl) DeleteVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoPageDTO {
+func (impl *VideoBizServiceImpl) DeleteVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoDTO {
 	video, err := impl.videoMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
@@ -344,17 +241,7 @@ func (impl *VideoBizServiceImpl) DeleteVideo(ctx contextDTO.ContextDTO, id int64
 		panic(errors.WrapError(err, fmt.Sprintf("delete video [%d] failed", id)))
 	}
 
-	return videoDTO.VideoPageDTO{
-		Id:              video.Id,
-		Name:            video.Name,
-		Description:     video.Description,
-		Actors:          video.Actors,
-		Tags:            video.Tags,
-		Uploader:        video.Uploader,
-		CoverUrl:        video.CoverUrl,
-		VideoUrl:        video.VideoUrl,
-		PermissionLevel: video.PermissionLevel,
-	}
+	return impl.convertVideoDO2VideoDTO(video)
 }
 
 func (impl *VideoBizServiceImpl) PlayVideo(ctx contextDTO.ContextDTO, id int64, rangeHeader ...string) videoDTO.VideoFileDTO {
@@ -396,4 +283,17 @@ func (impl *VideoBizServiceImpl) getVideoDuration(id int64, videoPath string) fl
 	}
 
 	return seconds
+}
+
+func (impl *VideoBizServiceImpl) convertVideoDO2VideoDTO(do videoDO.VideoDO) videoDTO.VideoDTO {
+	return videoDTO.VideoDTO{
+		Id:              do.Id,
+		Name:            do.Name,
+		Description:     do.Description,
+		Uploader:        do.Uploader,
+		CoverUrl:        do.CoverUrl,
+		VideoUrl:        do.VideoUrl,
+		Duration:        do.Duration,
+		PermissionLevel: do.PermissionLevel,
+	}
 }

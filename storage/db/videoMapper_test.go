@@ -43,7 +43,7 @@ func TestVideoMapperImpl_DeleteById(t *testing.T) {
 
 func TestVideoMapperImpl_Insert(t *testing.T) {
 	type args struct {
-		video *videoDO.VideoDO
+		video videoDO.VideoDO
 		tx    []orm.TxOrmer
 	}
 	tests := []struct {
@@ -54,11 +54,9 @@ func TestVideoMapperImpl_Insert(t *testing.T) {
 		{
 			name: "case1",
 			args: args{
-				video: &videoDO.VideoDO{
+				video: videoDO.VideoDO{
 					Name:            "test",
 					Description:     "test",
-					Actors:          []int64{1},
-					Tags:            []string{"test", "test1"},
 					Uploader:        "test",
 					VideoUrl:        "test",
 					CoverUrl:        "test",
@@ -81,7 +79,7 @@ func TestVideoMapperImpl_Insert(t *testing.T) {
 func TestVideoMapperImpl_Update(t *testing.T) {
 	type args struct {
 		id    int64
-		video *videoDO.VideoDO
+		video videoDO.VideoDO
 		tx    []orm.TxOrmer
 	}
 	tests := []struct {
@@ -93,12 +91,10 @@ func TestVideoMapperImpl_Update(t *testing.T) {
 			name: "case1",
 			args: args{
 				id: 5,
-				video: &videoDO.VideoDO{
+				video: videoDO.VideoDO{
 					Id:              5,
 					Name:            "test",
 					Description:     "test",
-					Actors:          []int64{1},
-					Tags:            []string{"test", "test2"},
 					Uploader:        "test1",
 					VideoUrl:        "test1",
 					CoverUrl:        "test1",
@@ -126,7 +122,7 @@ func TestVideoMapperImpl_SelectById(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *videoDO.VideoDO
+		want    videoDO.VideoDO
 		wantErr bool
 	}{
 		{
@@ -134,12 +130,10 @@ func TestVideoMapperImpl_SelectById(t *testing.T) {
 			args: args{
 				id: 4,
 			},
-			want: &videoDO.VideoDO{
+			want: videoDO.VideoDO{
 				Id:              4,
 				Name:            "test",
 				Description:     "test",
-				Actors:          []int64{1},
-				Tags:            []string{"test", "test2"},
 				Uploader:        "test1",
 				VideoUrl:        "test1",
 				CoverUrl:        "test1",

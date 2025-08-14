@@ -2,7 +2,7 @@ package db
 
 import (
 	"github.com/beego/beego/v2/client/orm"
-	"media-station/models/do/tagDO"
+	"media-station/models/do/performDO"
 	"reflect"
 	"testing"
 )
@@ -11,7 +11,35 @@ func init() {
 	_ = orm.RegisterDataBase("default", "mysql", "media:media@tcp(localhost:3306)/media?charset=utf8mb4&parseTime=True&loc=Local")
 }
 
-func TestTagMapperImpl_DeleteArt(t *testing.T) {
+func TestPerformMapperImpl_DeleteActor(t *testing.T) {
+	type args struct {
+		actorId int64
+		tx      []orm.TxOrmer
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "case1",
+			args: args{
+				actorId: 1,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			impl := PerformMapperImpl{}
+			if err := impl.DeleteActor(tt.args.actorId, tt.args.tx...); (err != nil) != tt.wantErr {
+				t.Errorf("DeleteActor() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestPerformMapperImpl_DeleteArt(t *testing.T) {
 	type args struct {
 		artType string
 		artId   int64
@@ -33,7 +61,7 @@ func TestTagMapperImpl_DeleteArt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			impl := &TagMapperImpl{}
+			impl := PerformMapperImpl{}
 			if err := impl.DeleteArt(tt.args.artType, tt.args.artId, tt.args.tx...); (err != nil) != tt.wantErr {
 				t.Errorf("DeleteArt() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -41,39 +69,11 @@ func TestTagMapperImpl_DeleteArt(t *testing.T) {
 	}
 }
 
-func TestTagMapperImpl_DeleteTag(t *testing.T) {
-	type args struct {
-		tag string
-		tx  []orm.TxOrmer
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "case1",
-			args: args{
-				tag: "tag1",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			impl := &TagMapperImpl{}
-			if err := impl.DeleteTag(tt.args.tag, tt.args.tx...); (err != nil) != tt.wantErr {
-				t.Errorf("DeleteTag() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestTagMapperImpl_InsertOrUpdateTagsOfArt(t *testing.T) {
+func TestPerformMapperImpl_InsertOrUpdateActorsOfArt(t *testing.T) {
 	type args struct {
 		artType string
 		artId   int64
-		items   []tagDO.TagDO
+		items   []performDO.PerformDO
 		tx      []orm.TxOrmer
 	}
 	tests := []struct {
@@ -86,12 +86,12 @@ func TestTagMapperImpl_InsertOrUpdateTagsOfArt(t *testing.T) {
 			args: args{
 				artType: "video",
 				artId:   1,
-				items: []tagDO.TagDO{
+				items: []performDO.PerformDO{
 					{
-						Tag: "tag1",
+						ActorId: 1,
 					},
 					{
-						Tag: "tag2",
+						ActorId: 2,
 					},
 				},
 			},
@@ -100,58 +100,15 @@ func TestTagMapperImpl_InsertOrUpdateTagsOfArt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			impl := &TagMapperImpl{}
-			if err := impl.InsertOrUpdateTagsOfArt(tt.args.artType, tt.args.artId, tt.args.items, tt.args.tx...); (err != nil) != tt.wantErr {
-				t.Errorf("InsertOrUpdateTagsOfArt() error = %v, wantErr %v", err, tt.wantErr)
+			impl := PerformMapperImpl{}
+			if err := impl.InsertOrUpdateActorsOfArt(tt.args.artType, tt.args.artId, tt.args.items, tt.args.tx...); (err != nil) != tt.wantErr {
+				t.Errorf("InsertOrUpdateActorsOfArt() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestTagMapperImpl_SelectArtByTag(t *testing.T) {
-	type args struct {
-		artType string
-		tag     string
-		tx      []orm.TxOrmer
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    []tagDO.TagDO
-		wantErr bool
-	}{
-		{
-			name: "case1",
-			args: args{
-				artType: "video",
-				tag:     "tag1",
-			},
-			want: []tagDO.TagDO{
-				{
-					ArtType: "video",
-					ArtId:   1,
-					Tag:     "tag1",
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			impl := &TagMapperImpl{}
-			got, err := impl.SelectArtByTag(tt.args.artType, tt.args.tag, tt.args.tx...)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("SelectArtByTag() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("SelectArtByTag() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestTagMapperImpl_SelectTagByArt(t *testing.T) {
+func TestPerformMapperImpl_SelectActorByArt(t *testing.T) {
 	type args struct {
 		artType string
 		artId   int64
@@ -160,7 +117,7 @@ func TestTagMapperImpl_SelectTagByArt(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []tagDO.TagDO
+		want    []performDO.PerformDO
 		wantErr bool
 	}{
 		{
@@ -169,16 +126,16 @@ func TestTagMapperImpl_SelectTagByArt(t *testing.T) {
 				artType: "video",
 				artId:   1,
 			},
-			want: []tagDO.TagDO{
+			want: []performDO.PerformDO{
 				{
 					ArtType: "video",
+					ActorId: 1,
 					ArtId:   1,
-					Tag:     "tag1",
 				},
 				{
 					ArtType: "video",
+					ActorId: 2,
 					ArtId:   1,
-					Tag:     "tag2",
 				},
 			},
 			wantErr: false,
@@ -186,14 +143,57 @@ func TestTagMapperImpl_SelectTagByArt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			impl := &TagMapperImpl{}
-			got, err := impl.SelectTagByArt(tt.args.artType, tt.args.artId, tt.args.tx...)
+			impl := PerformMapperImpl{}
+			got, err := impl.SelectActorByArt(tt.args.artType, tt.args.artId, tt.args.tx...)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("SelectTagByArt() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("SelectActorByArt() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("SelectTagByArt() got = %v, want %v", got, tt.want)
+				t.Errorf("SelectActorByArt() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPerformMapperImpl_SelectArtByActor(t *testing.T) {
+	type args struct {
+		artType string
+		actorId int64
+		tx      []orm.TxOrmer
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []performDO.PerformDO
+		wantErr bool
+	}{
+		{
+			name: "case1",
+			args: args{
+				artType: "video",
+				actorId: 1,
+			},
+			want: []performDO.PerformDO{
+				{
+					ArtType: "video",
+					ActorId: 1,
+					ArtId:   1,
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			impl := PerformMapperImpl{}
+			got, err := impl.SelectArtByActor(tt.args.artType, tt.args.actorId, tt.args.tx...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SelectArtByActor() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SelectArtByActor() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

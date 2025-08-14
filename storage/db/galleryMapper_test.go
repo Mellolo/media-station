@@ -42,7 +42,7 @@ func TestGalleryMapperImpl_DeleteById(t *testing.T) {
 
 func TestGalleryMapperImpl_Insert(t *testing.T) {
 	type args struct {
-		gallery *galleryDO.GalleryDO
+		gallery galleryDO.GalleryDO
 		tx      []orm.TxOrmer
 	}
 	tests := []struct {
@@ -53,15 +53,10 @@ func TestGalleryMapperImpl_Insert(t *testing.T) {
 		{
 			name: "case1",
 			args: args{
-				gallery: &galleryDO.GalleryDO{
+				gallery: galleryDO.GalleryDO{
 					Name:            "test",
 					Description:     "test",
-					PageCount:       30,
-					Actors:          nil,
-					Tags:            nil,
 					Uploader:        "",
-					CoverUrl:        "",
-					GalleryUrl:      "",
 					PermissionLevel: "",
 				},
 				tx: nil,
@@ -87,7 +82,7 @@ func TestGalleryMapperImpl_SelectById(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *galleryDO.GalleryDO
+		want    galleryDO.GalleryDO
 		wantErr bool
 	}{
 		{
@@ -95,16 +90,11 @@ func TestGalleryMapperImpl_SelectById(t *testing.T) {
 			args: args{
 				id: 1,
 			},
-			want: &galleryDO.GalleryDO{
+			want: galleryDO.GalleryDO{
 				Id:              1,
 				Name:            "1",
 				Description:     "1",
-				PageCount:       1,
-				Actors:          []int64{1},
-				Tags:            []string{"1"},
 				Uploader:        "1",
-				CoverUrl:        "1",
-				GalleryUrl:      "1",
 				PermissionLevel: "1",
 			},
 			wantErr: false,
@@ -129,7 +119,7 @@ func TestGalleryMapperImpl_SelectById(t *testing.T) {
 func TestGalleryMapperImpl_Update(t *testing.T) {
 	type args struct {
 		id      int64
-		gallery *galleryDO.GalleryDO
+		gallery galleryDO.GalleryDO
 		tx      []orm.TxOrmer
 	}
 	tests := []struct {
@@ -141,15 +131,10 @@ func TestGalleryMapperImpl_Update(t *testing.T) {
 			name: "case1",
 			args: args{
 				id: 2,
-				gallery: &galleryDO.GalleryDO{
+				gallery: galleryDO.GalleryDO{
 					Name:            "1",
 					Description:     "1",
-					PageCount:       1,
-					Actors:          []int64{1},
-					Tags:            []string{"1"},
 					Uploader:        "1",
-					CoverUrl:        "1",
-					GalleryUrl:      "1",
 					PermissionLevel: "1",
 				},
 			},

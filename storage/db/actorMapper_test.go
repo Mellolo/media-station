@@ -42,7 +42,7 @@ func TestActorMapperImpl_DeleteById(t *testing.T) {
 
 func TestActorMapperImpl_Insert(t *testing.T) {
 	type args struct {
-		actor *actorDO.ActorDO
+		actor actorDO.ActorDO
 		tx    []orm.TxOrmer
 	}
 	tests := []struct {
@@ -53,15 +53,11 @@ func TestActorMapperImpl_Insert(t *testing.T) {
 		{
 			name: "case1",
 			args: args{
-				actor: &actorDO.ActorDO{
+				actor: actorDO.ActorDO{
 					Name:        "a",
 					Description: "a",
 					Creator:     "a",
 					CoverUrl:    "a",
-					Art: actorDO.ActorArtDO{
-						VideoIds:   nil,
-						GalleryIds: []int64{1},
-					},
 				},
 				tx: nil,
 			},
@@ -88,7 +84,7 @@ func TestActorMapperImpl_SelectById(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *actorDO.ActorDO
+		want    actorDO.ActorDO
 		wantErr bool
 	}{
 		{
@@ -97,16 +93,12 @@ func TestActorMapperImpl_SelectById(t *testing.T) {
 				id: 1,
 				tx: nil,
 			},
-			want: &actorDO.ActorDO{
+			want: actorDO.ActorDO{
 				Id:          1,
 				Name:        "a",
 				Description: "a",
 				Creator:     "a",
 				CoverUrl:    "a",
-				Art: actorDO.ActorArtDO{
-					VideoIds:   nil,
-					GalleryIds: []int64{1},
-				},
 			},
 			wantErr: false,
 		},
@@ -130,7 +122,7 @@ func TestActorMapperImpl_SelectById(t *testing.T) {
 func TestActorMapperImpl_Update(t *testing.T) {
 	type args struct {
 		id    int64
-		actor *actorDO.ActorDO
+		actor actorDO.ActorDO
 		tx    []orm.TxOrmer
 	}
 	tests := []struct {
@@ -142,15 +134,11 @@ func TestActorMapperImpl_Update(t *testing.T) {
 			name: "case1",
 			args: args{
 				id: 1,
-				actor: &actorDO.ActorDO{
+				actor: actorDO.ActorDO{
 					Name:        "b",
 					Description: "b",
 					Creator:     "b",
 					CoverUrl:    "b",
-					Art: actorDO.ActorArtDO{
-						VideoIds:   nil,
-						GalleryIds: nil,
-					},
 				},
 			},
 			wantErr: false,

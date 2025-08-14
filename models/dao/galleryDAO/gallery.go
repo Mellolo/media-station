@@ -14,12 +14,9 @@ type GalleryRecord struct {
 
 	Name            string `orm:"column(name)"`
 	Description     string `orm:"column(description)"`
-	PageCount       int    `orm:"column(page_count)"`
-	Actors          string `orm:"column(actors)"`
-	Tags            string `orm:"column(tags)"`
 	Uploader        string `orm:"column(uploader)"`
-	CoverUrl        string `orm:"column(cover_url)"`
-	GalleryUrl      string `orm:"column(gallery_url)"`
+	DirPath         string `orm:"column(dir_path)"`
+	PicPaths        string `orm:"column(pic_paths)"`
 	PermissionLevel string `orm:"column(permission_level)"`
 }
 

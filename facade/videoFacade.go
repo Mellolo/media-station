@@ -6,12 +6,14 @@ import (
 	"github.com/mellolo/common/errors"
 	"github.com/mellolo/common/utils/jsonUtil"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"media-station/models/dto/actorDTO"
+	"media-station/enum"
 	"media-station/models/dto/fileDTO"
+	"media-station/models/dto/performDTO"
 	"media-station/models/dto/tagDTO"
 	"media-station/models/dto/videoDTO"
 	"media-station/models/vo/videoVO"
 	"media-station/service/biz/bizActor"
+	"media-station/service/biz/bizPerform"
 	"media-station/service/biz/bizTag"
 	"media-station/service/biz/bizVideo"
 	"media-station/storage/db"
@@ -19,16 +21,18 @@ import (
 
 type VideoFacade struct {
 	AbstractFacade
-	videoBizService bizVideo.VideoBizService
-	actorBizService bizActor.ActorBizService
-	tagBizService   bizTag.TagBizService
+	videoBizService   bizVideo.VideoBizService
+	actorBizService   bizActor.ActorBizService
+	performBizService bizPerform.PerformBizService
+	tagBizService     bizTag.TagBizService
 }
 
 func NewVideoFacade() *VideoFacade {
 	return &VideoFacade{
-		videoBizService: bizVideo.NewVideoBizService(),
-		actorBizService: bizActor.NewActorBizService(),
-		tagBizService:   bizTag.NewTagBizService(),
+		videoBizService:   bizVideo.NewVideoBizService(),
+		actorBizService:   bizActor.NewActorBizService(),
+		performBizService: bizPerform.NewPerformBizService(),
+		tagBizService:     bizTag.NewTagBizService(),
 	}
 }
 
@@ -45,11 +49,34 @@ func (impl *VideoFacade) SearchVideo(c *web.Controller) []videoVO.VideoItemVO {
 
 	var voList []videoVO.VideoItemVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
+		// 仅有关键词
+		if len(actors) == 0 && len(tags) == 0 {
+			items := impl.videoBizService.SearchVideoByKeyword(ctx, keyword, tx)
+			for _, item := range items {
+				voList = append(voList, videoVO.VideoItemVO{
+					Id:              item.Id,
+					Name:            item.Name,
+					Duration:        item.Duration,
+					PermissionLevel: item.PermissionLevel,
+				})
+			}
+			return
+		}
+
 		searchDTO := videoDTO.VideoSearchDTO{
 			Keyword: keyword,
-			Actors:  actors,
-			Tags:    tags,
 		}
+
+		if len(actors) > 0 && len(tags) > 0 {
+			videoIdSet := sets.NewInt64(impl.performBizService.SelectArtByActor(ctx, enum.ArtVideo, actors, tx)...)
+			videoIdSet = videoIdSet.Intersection(sets.NewInt64(impl.tagBizService.SelectArtByTag(ctx, enum.ArtVideo, tags, tx)...))
+			searchDTO.Ids = videoIdSet.List()
+		} else if len(actors) > 0 {
+			searchDTO.Ids = impl.performBizService.SelectArtByActor(ctx, enum.ArtVideo, actors, tx)
+		} else {
+			searchDTO.Ids = impl.tagBizService.SelectArtByTag(ctx, enum.ArtVideo, tags, tx)
+		}
+
 		items := impl.videoBizService.SearchVideo(ctx, searchDTO, tx)
 
 		for _, item := range items {
@@ -73,7 +100,14 @@ func (impl *VideoFacade) SearchVideoByTag(c *web.Controller) []videoVO.VideoItem
 
 	var voList []videoVO.VideoItemVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		items := impl.videoBizService.SearchVideoByTag(ctx, tagName, tx)
+		videoIds := impl.tagBizService.SelectArtByTag(ctx, enum.ArtVideo, []string{tagName}, tx)
+		if len(videoIds) == 0 {
+			return
+		}
+
+		items := impl.videoBizService.SearchVideo(ctx, videoDTO.VideoSearchDTO{
+			Ids: videoIds,
+		}, tx)
 
 		for _, item := range items {
 			voList = append(voList, videoVO.VideoItemVO{
@@ -96,22 +130,27 @@ func (impl *VideoFacade) GetVideoPage(c *web.Controller) videoVO.VideoPageVO {
 
 	var vo videoVO.VideoPageVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		page := impl.videoBizService.GetVideoPage(ctx, id, tx)
+		video := impl.videoBizService.GetVideo(ctx, id, tx)
+
+		actorIds := impl.performBizService.SelectActorByArt(ctx, enum.ArtVideo, id, tx)
 		var actors []videoVO.VideoActorVO
-		for _, actorId := range page.Actors {
-			actorPage := impl.actorBizService.GetActorPage(ctx, actorId)
+		for _, actorId := range actorIds {
+			actor := impl.actorBizService.GetActor(ctx, actorId)
 			actors = append(actors, videoVO.VideoActorVO{
-				Id:   actorPage.Id,
-				Name: actorPage.Name,
+				Id:   actor.Id,
+				Name: actor.Name,
 			})
 		}
+
+		tags := impl.tagBizService.SelectTagByArt(ctx, enum.ArtVideo, id, tx)
+
 		vo = videoVO.VideoPageVO{
-			Id:              page.Id,
-			Name:            page.Name,
-			Description:     page.Description,
+			Id:              video.Id,
+			Name:            video.Name,
+			Description:     video.Description,
 			Actors:          actors,
-			Tags:            page.Tags,
-			PermissionLevel: page.PermissionLevel,
+			Tags:            tags,
+			PermissionLevel: video.PermissionLevel,
 		}
 	})
 
@@ -175,24 +214,19 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 		}
 		// 创建视频
 		id := impl.videoBizService.CreateVideo(ctx, createDTO, videoFileDTO)
-		// 更新actor作品
-		for _, actorId := range createDTO.Actors {
-			updateDTO := actorDTO.ActorArtDTO{
-				VideoIds: []int64{id},
-			}
-			impl.actorBizService.AddArt(ctx, actorId, updateDTO, tx)
-		}
-		// 更新tag作品
-		for _, tagName := range createDTO.Tags {
-			updateDTO := tagDTO.TagCreateOrUpdateDTO{
-				Name:    tagName,
-				Creator: uploader,
-				Details: tagDTO.TagDetailsDTO{
-					VideoIds: []int64{id},
-				},
-			}
-			impl.tagBizService.AddArt(ctx, updateDTO, tx)
-		}
+
+		// 更新作品actor出演关系
+		impl.performBizService.InsertOrUpdateActorsOfArt(ctx, performDTO.ArtPerformDTO{
+			ArtType:  enum.ArtVideo,
+			ArtId:    id,
+			ActorIds: actors,
+		}, tx)
+		// 更新作品tag
+		impl.tagBizService.InsertOrUpdateTagsOfArt(ctx, tagDTO.ArtTagDTO{
+			ArtType: enum.ArtVideo,
+			ArtId:   id,
+			Tags:    tags,
+		}, tx)
 	})
 }
 
@@ -200,46 +234,29 @@ func (impl *VideoFacade) UpdateVideo(c *web.Controller) {
 	// 上下文
 	ctx := impl.GetContext(c)
 
-	var dto videoDTO.VideoUpdateDTO
-	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), &dto)
+	var requestBody struct {
+		videoDTO.VideoUpdateDTO
+		ActorIds []int64  `json:"actorIds"`
+		Tags     []string `json:"tags"`
+	}
+	jsonUtil.UnmarshalJsonString(string(c.Ctx.Input.RequestBody), &requestBody)
 
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		id := dto.Id
+		updateDTO := requestBody.VideoUpdateDTO
 		// 更新视频
-		page := impl.videoBizService.UpdateVideo(ctx, id, dto, tx)
-		// 更新actor作品
-		for _, actorId := range sets.NewInt64(dto.ActorIds...).Delete(page.Actors...).List() {
-			artDTO := actorDTO.ActorArtDTO{
-				VideoIds: []int64{id},
-			}
-			impl.actorBizService.AddArt(ctx, actorId, artDTO, tx)
-		}
-		for _, actorId := range sets.NewInt64(page.Actors...).Delete(dto.ActorIds...).List() {
-			artDTO := actorDTO.ActorArtDTO{
-				VideoIds: []int64{id},
-			}
-			impl.actorBizService.RemoveArt(ctx, actorId, artDTO, tx)
-		}
-		// 更新tag作品
-		for _, tagName := range sets.NewString(dto.Tags...).Delete(page.Tags...).List() {
-			updateDTO := tagDTO.TagCreateOrUpdateDTO{
-				Name:    tagName,
-				Creator: ctx.UserClaim.Username,
-				Details: tagDTO.TagDetailsDTO{
-					VideoIds: []int64{id},
-				},
-			}
-			impl.tagBizService.AddArt(ctx, updateDTO, tx)
-		}
-		for _, tagName := range sets.NewString(page.Tags...).Delete(dto.Tags...).List() {
-			updateDTO := tagDTO.TagRemoveArtDTO{
-				Name: tagName,
-				Details: tagDTO.TagDetailsDTO{
-					VideoIds: []int64{id},
-				},
-			}
-			impl.tagBizService.RemoveArt(ctx, updateDTO, tx)
-		}
+		_ = impl.videoBizService.UpdateVideo(ctx, updateDTO, tx)
+		// 更新作品actor出演关系
+		impl.performBizService.InsertOrUpdateActorsOfArt(ctx, performDTO.ArtPerformDTO{
+			ArtType:  enum.ArtVideo,
+			ArtId:    updateDTO.Id,
+			ActorIds: requestBody.ActorIds,
+		}, tx)
+		// 更新作品tag
+		impl.tagBizService.InsertOrUpdateTagsOfArt(ctx, tagDTO.ArtTagDTO{
+			ArtType: enum.ArtVideo,
+			ArtId:   updateDTO.Id,
+			Tags:    requestBody.Tags,
+		}, tx)
 	})
 }
 
@@ -252,25 +269,12 @@ func (impl *VideoFacade) DeleteVideo(c *web.Controller) {
 	var coverUrl, videoUrl string
 	db.DoTransaction(func(tx orm.TxOrmer) {
 		// 更新视频
-		page := impl.videoBizService.DeleteVideo(ctx, id, tx)
-		coverUrl, videoUrl = page.CoverUrl, page.VideoUrl
-		// 更新actor作品
-		for _, actorId := range page.Actors {
-			artDTO := actorDTO.ActorArtDTO{
-				VideoIds: []int64{id},
-			}
-			impl.actorBizService.RemoveArt(ctx, actorId, artDTO, tx)
-		}
-		// 更新tag作品
-		for _, tagName := range page.Tags {
-			artDTO := tagDTO.TagRemoveArtDTO{
-				Name: tagName,
-				Details: tagDTO.TagDetailsDTO{
-					VideoIds: []int64{id},
-				},
-			}
-			impl.tagBizService.RemoveArt(ctx, artDTO, tx)
-		}
+		video := impl.videoBizService.DeleteVideo(ctx, id, tx)
+		coverUrl, videoUrl = video.CoverUrl, video.VideoUrl
+		// 更新作品actor出演关系
+		impl.performBizService.DeleteArt(ctx, enum.ArtVideo, id, tx)
+		// 更新作品tag
+		impl.tagBizService.DeleteArt(ctx, enum.ArtVideo, id, tx)
 	})
 
 	if coverUrl != "" {

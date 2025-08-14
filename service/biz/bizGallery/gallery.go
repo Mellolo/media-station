@@ -15,6 +15,7 @@ import (
 	"media-station/service/domain/domainPermission"
 	"media-station/storage/db"
 	"media-station/storage/oss"
+	"strings"
 )
 
 const (
@@ -23,16 +24,16 @@ const (
 )
 
 type GalleryBizService interface {
-	GetGalleryPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO
-	SearchGallery(ctx contextDTO.ContextDTO, searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO
-	CreateGallery(ctx contextDTO.ContextDTO, createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64
-	UpdateGallery(ctx contextDTO.ContextDTO, id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO
-	RemoveActor(ctx contextDTO.ContextDTO, id int64, actorIds []int64, tx ...orm.TxOrmer)
-	RemoveTag(ctx contextDTO.ContextDTO, id int64, tags []string, tx ...orm.TxOrmer)
-	DeleteGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO
+	GetGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryDTO
+	GetGalleryCover(ctx contextDTO.ContextDTO, id int64) galleryDTO.PictureFileDTO
+	SearchGallery(ctx contextDTO.ContextDTO, searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryDTO
+	SearchGalleryByKeyword(ctx contextDTO.ContextDTO, keyword string, tx ...orm.TxOrmer) []galleryDTO.GalleryDTO
+	CreateGallery(ctx contextDTO.ContextDTO, createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, tx ...orm.TxOrmer) int64
+	UpdateGallery(ctx contextDTO.ContextDTO, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer) galleryDTO.GalleryDTO
+	DeleteGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryDTO
 	ShowGalleryPage(ctx contextDTO.ContextDTO, id int64, page int) galleryDTO.PictureFileDTO
 
-	RemoveGalleryDir(ctx contextDTO.ContextDTO, dir string, count int)
+	RemoveGalleryDir(ctx contextDTO.ContextDTO, dir string, filenames []string)
 }
 
 func NewGalleryBizService() *GalleryBizServiceImpl {
@@ -54,86 +55,101 @@ type GalleryBizServiceImpl struct {
 	permissionDomainService domainPermission.PermissionDomainService
 }
 
-func (impl *GalleryBizServiceImpl) GetGalleryPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO {
+func (impl *GalleryBizServiceImpl) GetGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryDTO {
 	gallery, err := impl.galleryMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("get gallery [%d] failed", id)))
 	}
-	return galleryDTO.GalleryPageDTO{
-		Id:              gallery.Id,
-		Name:            gallery.Name,
-		Description:     gallery.Description,
-		Actors:          gallery.Actors,
-		Tags:            gallery.Tags,
-		Uploader:        gallery.Uploader,
-		CoverUrl:        gallery.CoverUrl,
-		GalleryUrl:      gallery.GalleryUrl,
-		PermissionLevel: gallery.PermissionLevel,
+	return impl.convertGalleryDO2GalleryDTO(gallery)
+}
+
+func (impl *GalleryBizServiceImpl) GetGalleryCover(ctx contextDTO.ContextDTO, id int64) galleryDTO.PictureFileDTO {
+	gallery, err := impl.galleryMapper.SelectById(id)
+	if err != nil {
+		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
+	}
+	if len(gallery.PicPaths) == 0 {
+		return galleryDTO.PictureFileDTO{}
+	}
+	do := impl.pictureStorage.Download(bucketGallery, fmt.Sprintf("%s/%s", gallery.DirPath, gallery.PicPaths[0]))
+	return galleryDTO.PictureFileDTO{
+		Header: do.Header,
+		Reader: do.Reader,
 	}
 }
 
-func (impl *GalleryBizServiceImpl) SearchGallery(ctx contextDTO.ContextDTO, searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryItemDTO {
-	// 读取数据库
-	var galleryDOList []*galleryDO.GalleryDO
-	if searchDTO.Keyword == "" {
-		doList, err := impl.galleryMapper.SelectAllLimit(200, tx...)
+func (impl *GalleryBizServiceImpl) SearchGallery(ctx contextDTO.ContextDTO, searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryDTO {
+	var galleryDOList []galleryDO.GalleryDO
+
+	for _, id := range searchDTO.Ids {
+		do, err := impl.galleryMapper.SelectById(id, tx...)
 		if err != nil {
-			panic(errors.WrapError(err, "select all Gallery error"))
+			panic(errors.WrapError(err, fmt.Sprintf("select gallery by id [%d] error", id)))
 		}
-		galleryDOList = append(galleryDOList, doList...)
-	} else {
-		doList, err := impl.galleryMapper.SelectByKeyword(searchDTO.Keyword)
-		if err != nil {
-			panic(errors.WrapError(err, fmt.Sprintf("select Gallery by keyword [%s] error", searchDTO.Keyword)))
+		if searchDTO.Keyword != "" && !strings.Contains(do.Name, searchDTO.Keyword) && !strings.Contains(do.Description, searchDTO.Keyword) {
+			continue
 		}
-		galleryDOList = append(galleryDOList, doList...)
+		galleryDOList = append(galleryDOList, do)
 	}
 
-	var user = new(userDO.UserDO)
+	var user userDO.UserDO
 	if ctx.UserClaim.Username != "" {
 		user, _ = impl.userMapper.SelectByUsername(ctx.UserClaim.Username, tx...)
 	}
 	// 再筛选，并转化为DTO
-	var items []galleryDTO.GalleryItemDTO
+	var items []galleryDTO.GalleryDTO
 	for _, do := range galleryDOList {
-		if !impl.permissionDomainService.IsAccessAllowed(*user, do.Uploader, do.PermissionLevel) {
-			continue
-		}
-		if len(searchDTO.Actors) > 0 && !sets.NewInt64(do.Actors...).HasAll(searchDTO.Actors...) {
-			continue
-		}
-		if len(searchDTO.Tags) > 0 && !sets.NewString(do.Tags...).HasAll(searchDTO.Tags...) {
+		if !impl.permissionDomainService.IsVisible(user, do.Uploader, do.PermissionLevel) {
 			continue
 		}
 
-		items = append(items, galleryDTO.GalleryItemDTO{
-			Id:              do.Id,
-			Name:            do.Name,
-			CoverUrl:        do.CoverUrl,
-			PermissionLevel: do.PermissionLevel,
-		})
+		items = append(items, impl.convertGalleryDO2GalleryDTO(do))
 	}
 
 	return items
 }
 
-func (impl *GalleryBizServiceImpl) CreateGallery(ctx contextDTO.ContextDTO, createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, ch chan string, tx ...orm.TxOrmer) int64 {
-	defer func() {
-		if ch != nil {
-			close(ch)
+func (impl *GalleryBizServiceImpl) SearchGalleryByKeyword(ctx contextDTO.ContextDTO, keyword string, tx ...orm.TxOrmer) []galleryDTO.GalleryDTO {
+	var galleryDOList []galleryDO.GalleryDO
+	if keyword != "" {
+		doList, err := impl.galleryMapper.SelectByKeyword(keyword)
+		if err != nil {
+			panic(errors.WrapError(err, fmt.Sprintf("select Gallery by keyword [%s] error", keyword)))
 		}
-	}()
+		galleryDOList = append(galleryDOList, doList...)
+	} else {
+		doList, err := impl.galleryMapper.SelectAllLimit(200, tx...)
+		if err != nil {
+			panic(errors.WrapError(err, "select all gallery error"))
+		}
+		galleryDOList = append(galleryDOList, doList...)
+	}
 
+	var user userDO.UserDO
+	if ctx.UserClaim.Username != "" {
+		user, _ = impl.userMapper.SelectByUsername(ctx.UserClaim.Username, tx...)
+	}
+	// 再筛选，并转化为DTO
+	var items []galleryDTO.GalleryDTO
+	for _, do := range galleryDOList {
+		if !impl.permissionDomainService.IsVisible(user, do.Uploader, do.PermissionLevel) {
+			continue
+		}
+
+		items = append(items, impl.convertGalleryDO2GalleryDTO(do))
+	}
+
+	return items
+}
+
+func (impl *GalleryBizServiceImpl) CreateGallery(ctx contextDTO.ContextDTO, createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, tx ...orm.TxOrmer) int64 {
 	if len(picDTOList) == 0 {
 		panic(errors.NewError("gallery is empty"))
 	}
 
-	gallery := &galleryDO.GalleryDO{
+	gallery := galleryDO.GalleryDO{
 		Name:        createDTO.Name,
 		Description: createDTO.Description,
-		PageCount:   len(picDTOList),
-		Actors:      createDTO.Actors,
-		Tags:        createDTO.Tags,
 		Uploader:    createDTO.Uploader,
 	}
 	if sets.NewString(enum.PermissionLevels...).Has(createDTO.PermissionLevel) {
@@ -143,18 +159,15 @@ func (impl *GalleryBizServiceImpl) CreateGallery(ctx contextDTO.ContextDTO, crea
 	}
 	// 上传画廊资源
 	dir := impl.idGenerator.GenerateId(galleryIdGenerateKey)
-	for i, picDTO := range picDTOList {
-		path := fmt.Sprintf("%s/%d.jpg", dir, i+1)
+	var picPaths []string
+	for _, picDTO := range picDTOList {
+		fileName := fmt.Sprintf("%s.jpg", impl.idGenerator.GenerateId(dir))
+		path := fmt.Sprintf("%s/%s", dir, fileName)
 		impl.pictureStorage.Upload(bucketGallery, path, picDTO.File, picDTO.Size)
-		if ch != nil {
-			ch <- fmt.Sprintf("%.2f", float64(i+1)/float64(len(picDTOList)))
-		}
+		picPaths = append(picPaths, fileName)
 	}
-	if ch != nil {
-		ch <- "complete"
-	}
-	gallery.GalleryUrl = dir
-	gallery.CoverUrl = fmt.Sprintf("%s/1.jpg", dir)
+	gallery.DirPath = dir
+	gallery.PicPaths = picPaths
 
 	id, err := impl.galleryMapper.Insert(gallery, tx...)
 	if err != nil {
@@ -163,72 +176,30 @@ func (impl *GalleryBizServiceImpl) CreateGallery(ctx contextDTO.ContextDTO, crea
 	return id
 }
 
-func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, id int64, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO {
-	gallery, err := impl.galleryMapper.SelectById(id, tx...)
+func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer) galleryDTO.GalleryDTO {
+	gallery, err := impl.galleryMapper.SelectById(updateDTO.Id, tx...)
 	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
+		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", updateDTO.Id)))
 	}
-	origin := gallery.DeepCopy()
+	origin := *gallery.DeepCopy()
 
 	// 更新gallery
 	gallery.Name = updateDTO.Name
 	gallery.Description = updateDTO.Description
-	gallery.Actors = updateDTO.Actors
-	gallery.Tags = updateDTO.Tags
 	if sets.NewString(enum.PermissionLevels...).Has(updateDTO.PermissionLevel) {
 		gallery.PermissionLevel = updateDTO.PermissionLevel
 	}
 
 	// 更新写入数据库
-	err = impl.galleryMapper.Update(id, gallery, tx...)
+	err = impl.galleryMapper.Update(updateDTO.Id, gallery, tx...)
 	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("update gallery [%d] failed", id)))
+		panic(errors.WrapError(err, fmt.Sprintf("update gallery [%d] failed", updateDTO.Id)))
 	}
 
-	return galleryDTO.GalleryPageDTO{
-		Id:              origin.Id,
-		Name:            origin.Name,
-		Description:     origin.Description,
-		Actors:          origin.Actors,
-		Tags:            origin.Tags,
-		Uploader:        origin.Uploader,
-		CoverUrl:        origin.CoverUrl,
-		GalleryUrl:      origin.GalleryUrl,
-		PermissionLevel: origin.PermissionLevel,
-	}
+	return impl.convertGalleryDO2GalleryDTO(origin)
 }
 
-func (impl *GalleryBizServiceImpl) RemoveActor(ctx contextDTO.ContextDTO, id int64, actorIds []int64, tx ...orm.TxOrmer) {
-	gallery, err := impl.galleryMapper.SelectById(id, tx...)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
-	}
-
-	gallery.Actors = sets.NewInt64(gallery.Actors...).Delete(actorIds...).List()
-
-	// 更新写入数据库
-	err = impl.galleryMapper.Update(id, gallery, tx...)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("update gallery [%d] failed", id)))
-	}
-}
-
-func (impl *GalleryBizServiceImpl) RemoveTag(ctx contextDTO.ContextDTO, id int64, tags []string, tx ...orm.TxOrmer) {
-	gallery, err := impl.galleryMapper.SelectById(id, tx...)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
-	}
-
-	gallery.Tags = sets.NewString(gallery.Tags...).Delete(tags...).List()
-
-	// 更新写入数据库
-	err = impl.galleryMapper.Update(id, gallery, tx...)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("update gallery [%d] failed", id)))
-	}
-}
-
-func (impl *GalleryBizServiceImpl) DeleteGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryPageDTO {
+func (impl *GalleryBizServiceImpl) DeleteGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryDTO {
 	gallery, err := impl.galleryMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
@@ -238,17 +209,7 @@ func (impl *GalleryBizServiceImpl) DeleteGallery(ctx contextDTO.ContextDTO, id i
 		panic(errors.WrapError(err, fmt.Sprintf("delete gallery [%d] failed", id)))
 	}
 
-	return galleryDTO.GalleryPageDTO{
-		Id:              gallery.Id,
-		Name:            gallery.Name,
-		Description:     gallery.Description,
-		Actors:          gallery.Actors,
-		Tags:            gallery.Tags,
-		Uploader:        gallery.Uploader,
-		CoverUrl:        gallery.CoverUrl,
-		GalleryUrl:      gallery.GalleryUrl,
-		PermissionLevel: gallery.PermissionLevel,
-	}
+	return impl.convertGalleryDO2GalleryDTO(gallery)
 }
 
 func (impl *GalleryBizServiceImpl) ShowGalleryPage(ctx contextDTO.ContextDTO, id int64, page int) galleryDTO.PictureFileDTO {
@@ -256,18 +217,30 @@ func (impl *GalleryBizServiceImpl) ShowGalleryPage(ctx contextDTO.ContextDTO, id
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", id)))
 	}
-	if page > gallery.PageCount || page < 1 {
+	if page > len(gallery.PicPaths) || page < 1 {
 		panic(errors.NewError(fmt.Sprintf("gallery [%d] page [%d] doesn't exist", id, page)))
 	}
-	do := impl.pictureStorage.Download(bucketGallery, fmt.Sprintf("%s/%d.jpg", gallery.GalleryUrl, page))
+	do := impl.pictureStorage.Download(bucketGallery, fmt.Sprintf("%s/%s", gallery.DirPath, gallery.PicPaths[page-1]))
 	return galleryDTO.PictureFileDTO{
 		Header: do.Header,
 		Reader: do.Reader,
 	}
 }
 
-func (impl *GalleryBizServiceImpl) RemoveGalleryDir(ctx contextDTO.ContextDTO, dir string, count int) {
-	for i := 1; i <= count; i++ {
-		impl.pictureStorage.Remove(bucketGallery, fmt.Sprintf("%s/%d.jpg", dir, i))
+func (impl *GalleryBizServiceImpl) RemoveGalleryDir(ctx contextDTO.ContextDTO, dir string, filenames []string) {
+	for _, filename := range filenames {
+		impl.pictureStorage.Remove(bucketGallery, fmt.Sprintf("%s/%s", dir, filename))
+	}
+}
+
+func (impl *GalleryBizServiceImpl) convertGalleryDO2GalleryDTO(do galleryDO.GalleryDO) galleryDTO.GalleryDTO {
+	return galleryDTO.GalleryDTO{
+		Id:              do.Id,
+		Name:            do.Name,
+		Description:     do.Description,
+		Uploader:        do.Uploader,
+		DirPath:         do.DirPath,
+		PicPaths:        do.PicPaths,
+		PermissionLevel: do.PermissionLevel,
 	}
 }

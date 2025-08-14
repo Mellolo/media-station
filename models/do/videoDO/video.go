@@ -11,11 +11,10 @@ type VideoDO struct {
 	CreateAt        string
 	Name            string
 	Description     string
-	Actors          []int64
-	Tags            []string // 标签
-	Uploader        string   // 上传者用户名
+	Uploader        string // 上传者用户名
 	VideoUrl        string
 	CoverUrl        string
+	Duration        float64
 	PermissionLevel string // 权限等级
 }
 

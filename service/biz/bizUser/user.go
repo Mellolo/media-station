@@ -46,7 +46,7 @@ func (impl UserBizServiceImpl) GetProfile(ctx contextDTO.ContextDTO, username st
 }
 
 func (impl UserBizServiceImpl) Register(ctx contextDTO.ContextDTO, registerDTO userDTO.UserRegisterDTO, tx ...orm.TxOrmer) {
-	_, err := impl.userMapper.Insert(&userDO.UserDO{
+	_, err := impl.userMapper.Insert(userDO.UserDO{
 		Username: registerDTO.Username,
 		Password: registerDTO.Password,
 	}, tx...)

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/mellolo/common/errors"
-	pkgErrors "github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"media-station/generator"
 	"media-station/models/do/actorDO"
 	"media-station/models/dto/actorDTO"
@@ -21,15 +19,13 @@ const (
 )
 
 type ActorBizService interface {
-	GetActorPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorPageDTO
+	GetActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorDTO
 	GetActorCover(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorCoverFileDTO
 	CreateActor(ctx contextDTO.ContextDTO, createDTO actorDTO.ActorCreateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64
-	UpdateActor(ctx contextDTO.ContextDTO, id int64, updateDTO actorDTO.ActorUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) string
+	UpdateActor(ctx contextDTO.ContextDTO, id int64, updateDTO actorDTO.ActorUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) actorDTO.ActorDTO
 	RemoveLastCover(ctx contextDTO.ContextDTO, lastCoverUrl string)
-	AddArt(ctx contextDTO.ContextDTO, id int64, dto actorDTO.ActorArtDTO, tx ...orm.TxOrmer)
-	RemoveArt(ctx contextDTO.ContextDTO, id int64, dto actorDTO.ActorArtDTO, tx ...orm.TxOrmer)
-	DeleteActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorPageDTO
-	SearchActor(ctx contextDTO.ContextDTO, dto actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorItemDTO
+	DeleteActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorDTO
+	SearchActor(ctx contextDTO.ContextDTO, dto actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorDTO
 }
 
 type ActorBizServiceImpl struct {
@@ -46,23 +42,13 @@ func NewActorBizService() *ActorBizServiceImpl {
 	}
 }
 
-func (impl *ActorBizServiceImpl) GetActorPage(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorPageDTO {
+func (impl *ActorBizServiceImpl) GetActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorDTO {
 	actor, err := impl.actorMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("get actor [%d] failed", id)))
 	}
 
-	return actorDTO.ActorPageDTO{
-		Id:          actor.Id,
-		Name:        actor.Name,
-		Description: actor.Description,
-		Creator:     actor.Creator,
-		CoverUrl:    actor.CoverUrl,
-		Art: actorDTO.ActorArtDTO{
-			VideoIds:   actor.Art.VideoIds,
-			GalleryIds: actor.Art.GalleryIds,
-		},
-	}
+	return impl.convertActorDO2ActorDTO(actor)
 }
 
 func (impl *ActorBizServiceImpl) GetActorCover(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorCoverFileDTO {
@@ -79,7 +65,7 @@ func (impl *ActorBizServiceImpl) GetActorCover(ctx contextDTO.ContextDTO, id int
 }
 
 func (impl *ActorBizServiceImpl) CreateActor(ctx contextDTO.ContextDTO, createDTO actorDTO.ActorCreateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) int64 {
-	actor := &actorDO.ActorDO{
+	actor := actorDO.ActorDO{
 		Name:        createDTO.Name,
 		Description: createDTO.Description,
 		Creator:     createDTO.Creator,
@@ -99,11 +85,12 @@ func (impl *ActorBizServiceImpl) CreateActor(ctx contextDTO.ContextDTO, createDT
 	return id
 }
 
-func (impl *ActorBizServiceImpl) UpdateActor(ctx contextDTO.ContextDTO, id int64, updateDTO actorDTO.ActorUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) string {
+func (impl *ActorBizServiceImpl) UpdateActor(ctx contextDTO.ContextDTO, id int64, updateDTO actorDTO.ActorUpdateDTO, coverDTO fileDTO.FileDTO, tx ...orm.TxOrmer) actorDTO.ActorDTO {
 	actor, err := impl.actorMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("actor [%d] doesn't exist", id)))
 	}
+	origin := *actor.DeepCopy()
 
 	if updateDTO.Name != "" {
 		actor.Name = updateDTO.Name
@@ -113,12 +100,10 @@ func (impl *ActorBizServiceImpl) UpdateActor(ctx contextDTO.ContextDTO, id int64
 	}
 
 	// 上传封面
-	lastCoverUrl := ""
 	if coverDTO.File != nil {
 		filename := impl.idGenerator.GenerateId(actorCoverIdGenerateKey)
 		path := fmt.Sprintf("%s.jpg", filename)
 		impl.pictureStorage.Upload(bucketActor, path, coverDTO.File, coverDTO.Size)
-		lastCoverUrl = actor.CoverUrl
 		actor.CoverUrl = path
 	}
 
@@ -126,71 +111,30 @@ func (impl *ActorBizServiceImpl) UpdateActor(ctx contextDTO.ContextDTO, id int64
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("update actor [%d] failed", id)))
 	}
-	return lastCoverUrl
+	return impl.convertActorDO2ActorDTO(origin)
 }
 
 func (impl *ActorBizServiceImpl) RemoveLastCover(ctx contextDTO.ContextDTO, lastCoverUrl string) {
 	impl.pictureStorage.Remove(bucketActor, lastCoverUrl)
 }
 
-func (impl *ActorBizServiceImpl) AddArt(ctx contextDTO.ContextDTO, id int64, dto actorDTO.ActorArtDTO, tx ...orm.TxOrmer) {
+func (impl *ActorBizServiceImpl) DeleteActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorDTO {
 	actor, err := impl.actorMapper.SelectById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("actor [%d] doesn't exist", id)))
 	}
 
-	videoIds := sets.NewInt64(actor.Art.VideoIds...)
-	videoIds.Insert(dto.VideoIds...)
-	actor.Art.VideoIds = videoIds.List()
-
-	galleryIds := sets.NewInt64(actor.Art.GalleryIds...)
-	galleryIds.Insert(dto.GalleryIds...)
-	actor.Art.GalleryIds = galleryIds.List()
-
-	err = impl.actorMapper.Update(id, actor)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("update actor [%d] failed", id)))
-	}
-}
-
-func (impl *ActorBizServiceImpl) RemoveArt(ctx contextDTO.ContextDTO, id int64, dto actorDTO.ActorArtDTO, tx ...orm.TxOrmer) {
-	actor, err := impl.actorMapper.SelectById(id, tx...)
-	if err != nil && !pkgErrors.Is(err, orm.ErrNoRows) {
-		panic(errors.WrapError(err, "select actor failed"))
-	}
-	actor.Art.VideoIds = sets.NewInt64(actor.Art.VideoIds...).Delete(dto.VideoIds...).List()
-	actor.Art.GalleryIds = sets.NewInt64(actor.Art.GalleryIds...).Delete(dto.GalleryIds...).List()
-	err = impl.actorMapper.Update(id, actor, tx...)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("remove artwork for actor [%s] failed", id)))
-	}
-}
-
-func (impl *ActorBizServiceImpl) DeleteActor(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) actorDTO.ActorPageDTO {
-	actor, err := impl.actorMapper.SelectById(id, tx...)
-	if err != nil {
-		panic(errors.WrapError(err, fmt.Sprintf("actor [%d] doesn't exist", id)))
-	}
 	err = impl.actorMapper.DeleteById(id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("delete actor [%d] failed", id)))
 	}
-	return actorDTO.ActorPageDTO{
-		Id:          actor.Id,
-		Name:        actor.Name,
-		Description: actor.Description,
-		Creator:     actor.Creator,
-		CoverUrl:    actor.CoverUrl,
-		Art: actorDTO.ActorArtDTO{
-			VideoIds:   actor.Art.VideoIds,
-			GalleryIds: actor.Art.GalleryIds,
-		},
-	}
+
+	return impl.convertActorDO2ActorDTO(actor)
 }
 
-func (impl *ActorBizServiceImpl) SearchActor(ctx contextDTO.ContextDTO, searchDTO actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorItemDTO {
+func (impl *ActorBizServiceImpl) SearchActor(ctx contextDTO.ContextDTO, searchDTO actorDTO.ActorSearchDTO, tx ...orm.TxOrmer) []actorDTO.ActorDTO {
 	// 读取数据库
-	var actorDOList []*actorDO.ActorDO
+	var actorDOList []actorDO.ActorDO
 	if searchDTO.Keyword == "" {
 		doList, err := impl.actorMapper.SelectAllLimit(200, tx...)
 		if err != nil {
@@ -205,14 +149,19 @@ func (impl *ActorBizServiceImpl) SearchActor(ctx contextDTO.ContextDTO, searchDT
 		actorDOList = append(actorDOList, doList...)
 	}
 
-	var actorItems []actorDTO.ActorItemDTO
+	var actorItems []actorDTO.ActorDTO
 	for _, actor := range actorDOList {
-		actorItems = append(actorItems, actorDTO.ActorItemDTO{
-			Id:          actor.Id,
-			Name:        actor.Name,
-			Description: actor.Description,
-			CoverUrl:    actor.CoverUrl,
-		})
+		actorItems = append(actorItems, impl.convertActorDO2ActorDTO(actor))
 	}
 	return actorItems
+}
+
+func (impl *ActorBizServiceImpl) convertActorDO2ActorDTO(do actorDO.ActorDO) actorDTO.ActorDTO {
+	return actorDTO.ActorDTO{
+		Id:          do.Id,
+		Name:        do.Name,
+		Description: do.Description,
+		Creator:     do.Creator,
+		CoverUrl:    do.CoverUrl,
+	}
 }

@@ -1,8 +1,8 @@
-package tagDO
+package performDO
 
 // +k8s:deepcopy-gen=true
-type TagDO struct {
+type PerformDO struct {
 	ArtType string
 	ArtId   int64
-	Tag     string
+	ActorId int64
 }

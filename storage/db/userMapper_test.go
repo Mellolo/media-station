@@ -42,7 +42,7 @@ func TestUserMapperImpl_DeleteById(t *testing.T) {
 
 func TestUserMapperImpl_Insert(t *testing.T) {
 	type args struct {
-		user *userDO.UserDO
+		user userDO.UserDO
 		tx   []orm.TxOrmer
 	}
 	tests := []struct {
@@ -53,7 +53,7 @@ func TestUserMapperImpl_Insert(t *testing.T) {
 		{
 			name: "case1",
 			args: args{
-				user: &userDO.UserDO{
+				user: userDO.UserDO{
 					Username:    "test_user",
 					Password:    "password123",
 					PhoneNumber: "1234567890",
@@ -86,7 +86,7 @@ func TestUserMapperImpl_SelectById(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *userDO.UserDO
+		want    userDO.UserDO
 		wantErr bool
 	}{
 		{
@@ -95,7 +95,7 @@ func TestUserMapperImpl_SelectById(t *testing.T) {
 				username: "test_user",
 				tx:       nil,
 			},
-			want: &userDO.UserDO{
+			want: userDO.UserDO{
 				Username:    "test_user",
 				Password:    "password123",
 				PhoneNumber: "1234567890",
@@ -126,7 +126,7 @@ func TestUserMapperImpl_SelectById(t *testing.T) {
 func TestUserMapperImpl_Update(t *testing.T) {
 	type args struct {
 		username string
-		user     *userDO.UserDO
+		user     userDO.UserDO
 		tx       []orm.TxOrmer
 	}
 	tests := []struct {
@@ -137,7 +137,7 @@ func TestUserMapperImpl_Update(t *testing.T) {
 		{
 			name: "case1",
 			args: args{
-				user: &userDO.UserDO{
+				user: userDO.UserDO{
 					Username:    "test_user",
 					Password:    "new_password",
 					PhoneNumber: "0987654321",

@@ -5,13 +5,15 @@ import (
 	"github.com/beego/beego/v2/server/web"
 	"github.com/mellolo/common/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"media-station/models/dto/actorDTO"
+	"media-station/enum"
 	"media-station/models/dto/fileDTO"
 	"media-station/models/dto/galleryDTO"
+	"media-station/models/dto/performDTO"
 	"media-station/models/dto/tagDTO"
 	"media-station/models/vo/galleryVO"
 	"media-station/service/biz/bizActor"
 	"media-station/service/biz/bizGallery"
+	"media-station/service/biz/bizPerform"
 	"media-station/service/biz/bizTag"
 	"media-station/storage/db"
 )
@@ -21,6 +23,7 @@ type GalleryFacade struct {
 	galleryBizService bizGallery.GalleryBizService
 	actorBizService   bizActor.ActorBizService
 	tagBizService     bizTag.TagBizService
+	performBizService bizPerform.PerformBizService
 }
 
 func NewGalleryFacade() *GalleryFacade {
@@ -28,6 +31,7 @@ func NewGalleryFacade() *GalleryFacade {
 		galleryBizService: bizGallery.NewGalleryBizService(),
 		actorBizService:   bizActor.NewActorBizService(),
 		tagBizService:     bizTag.NewTagBizService(),
+		performBizService: bizPerform.NewPerformBizService(),
 	}
 }
 
@@ -45,10 +49,32 @@ func (impl *GalleryFacade) SearchGallery(c *web.Controller) []galleryVO.GalleryI
 
 	var voList []galleryVO.GalleryItemVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
+		// 仅有关键词
+		if len(actors) == 0 && len(tags) == 0 {
+			items := impl.galleryBizService.SearchGalleryByKeyword(ctx, keyword, tx)
+			for _, item := range items {
+				voList = append(voList, galleryVO.GalleryItemVO{
+					Id:              item.Id,
+					Name:            item.Name,
+					PageCount:       len(item.PicPaths),
+					PermissionLevel: item.PermissionLevel,
+				})
+			}
+			return
+		}
+
 		searchDTO := galleryDTO.GallerySearchDTO{
 			Keyword: keyword,
-			Actors:  actors,
-			Tags:    tags,
+		}
+
+		if len(actors) > 0 && len(tags) > 0 {
+			videoIdSet := sets.NewInt64(impl.performBizService.SelectArtByActor(ctx, enum.ArtGallery, actors, tx)...)
+			videoIdSet = videoIdSet.Intersection(sets.NewInt64(impl.tagBizService.SelectArtByTag(ctx, enum.ArtGallery, tags, tx)...))
+			searchDTO.Ids = videoIdSet.List()
+		} else if len(actors) > 0 {
+			searchDTO.Ids = impl.performBizService.SelectArtByActor(ctx, enum.ArtGallery, actors, tx)
+		} else {
+			searchDTO.Ids = impl.tagBizService.SelectArtByTag(ctx, enum.ArtGallery, tags, tx)
 		}
 
 		items := impl.galleryBizService.SearchGallery(ctx, searchDTO, tx)
@@ -73,19 +99,35 @@ func (impl *GalleryFacade) GetGalleryPage(c *web.Controller) galleryVO.GalleryPa
 
 	var vo galleryVO.GalleryPageVO
 	db.DoTransaction(func(tx orm.TxOrmer) {
-		page := impl.galleryBizService.GetGalleryPage(ctx, id, tx)
+		gallery := impl.galleryBizService.GetGallery(ctx, id, tx)
+
+		actorIds := impl.performBizService.SelectActorByArt(ctx, enum.ArtGallery, id, tx)
+		var actors []galleryVO.GalleryActorVO
+		for _, actorId := range actorIds {
+			actor := impl.actorBizService.GetActor(ctx, actorId)
+			actors = append(actors, galleryVO.GalleryActorVO{
+				Id:   actor.Id,
+				Name: actor.Name,
+			})
+		}
+
+		tags := impl.tagBizService.SelectTagByArt(ctx, enum.ArtGallery, id, tx)
+
 		vo = galleryVO.GalleryPageVO{
-			Id:              page.Id,
-			Name:            page.Name,
-			Description:     page.Description,
-			PermissionLevel: page.PermissionLevel,
+			Id:              gallery.Id,
+			Name:            gallery.Name,
+			Description:     gallery.Description,
+			PageCount:       len(gallery.PicPaths),
+			Actors:          actors,
+			Tags:            tags,
+			PermissionLevel: gallery.PermissionLevel,
 		}
 	})
 
 	return vo
 }
 
-func (impl *GalleryFacade) UploadGallery(c *web.Controller, ch chan string) {
+func (impl *GalleryFacade) UploadGallery(c *web.Controller) {
 	// 上下文
 	ctx := impl.GetContext(c)
 	// 名称
@@ -113,8 +155,6 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller, ch chan string) {
 		createDTO := galleryDTO.GalleryCreateDTO{
 			Name:            name,
 			Description:     description,
-			Actors:          actors,
-			Tags:            tags,
 			Uploader:        uploader,
 			PermissionLevel: permissionLevel,
 		}
@@ -132,25 +172,19 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller, ch chan string) {
 		}
 
 		// 创建图集
-		id := impl.galleryBizService.CreateGallery(ctx, createDTO, galleryFileDTOList, ch)
-		// 更新演员作品
-		for _, actorId := range createDTO.Actors {
-			artDTO := actorDTO.ActorArtDTO{
-				GalleryIds: []int64{id},
-			}
-			impl.actorBizService.AddArt(ctx, actorId, artDTO, tx)
-		}
-		// 更新tag作品
-		for _, tagName := range createDTO.Tags {
-			updateDTO := tagDTO.TagCreateOrUpdateDTO{
-				Name:    tagName,
-				Creator: uploader,
-				Details: tagDTO.TagDetailsDTO{
-					GalleryIds: []int64{id},
-				},
-			}
-			impl.tagBizService.AddArt(ctx, updateDTO, tx)
-		}
+		id := impl.galleryBizService.CreateGallery(ctx, createDTO, galleryFileDTOList)
+		// 更新作品actor出演关系
+		impl.performBizService.InsertOrUpdateActorsOfArt(ctx, performDTO.ArtPerformDTO{
+			ArtType:  enum.ArtGallery,
+			ArtId:    id,
+			ActorIds: actors,
+		}, tx)
+		// 更新作品tag
+		impl.tagBizService.InsertOrUpdateTagsOfArt(ctx, tagDTO.ArtTagDTO{
+			ArtType: enum.ArtGallery,
+			ArtId:   id,
+			Tags:    tags,
+		}, tx)
 	})
 }
 

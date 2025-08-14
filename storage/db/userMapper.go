@@ -8,9 +8,9 @@ import (
 )
 
 type UserMapper interface {
-	Insert(user *userDO.UserDO, tx ...orm.TxOrmer) (int64, error)
-	SelectByUsername(username string, tx ...orm.TxOrmer) (*userDO.UserDO, error)
-	Update(user *userDO.UserDO, tx ...orm.TxOrmer) error
+	Insert(user userDO.UserDO, tx ...orm.TxOrmer) (int64, error)
+	SelectByUsername(username string, tx ...orm.TxOrmer) (userDO.UserDO, error)
+	Update(user userDO.UserDO, tx ...orm.TxOrmer) error
 	DeleteByUsername(username string, tx ...orm.TxOrmer) error
 }
 
@@ -20,7 +20,7 @@ func NewUserMapper() *UserMapperImpl {
 	return &UserMapperImpl{}
 }
 
-func (impl *UserMapperImpl) Insert(user *userDO.UserDO, tx ...orm.TxOrmer) (int64, error) {
+func (impl *UserMapperImpl) Insert(user userDO.UserDO, tx ...orm.TxOrmer) (int64, error) {
 	executor := getQueryExecutor(tx...)
 
 	// todo 有更复杂处理
@@ -35,18 +35,18 @@ func (impl *UserMapperImpl) Insert(user *userDO.UserDO, tx ...orm.TxOrmer) (int6
 	return executor.Insert(&record)
 }
 
-func (impl *UserMapperImpl) SelectByUsername(username string, tx ...orm.TxOrmer) (*userDO.UserDO, error) {
+func (impl *UserMapperImpl) SelectByUsername(username string, tx ...orm.TxOrmer) (userDO.UserDO, error) {
 	executor := getQueryExecutor(tx...)
 	var record userDAO.UserRecord
 	err := executor.QueryTable(userDAO.TableUser).Filter("username", username).One(&record)
 	if err != nil {
-		return nil, err
+		return userDO.UserDO{}, err
 	}
 
 	// todo 有更复杂处理
 	var userArt userDO.UserArt
 	jsonUtil.UnmarshalJsonString(record.Details, &userArt)
-	do := &userDO.UserDO{
+	do := userDO.UserDO{
 		Username:    record.Username,
 		Password:    record.Password,
 		PhoneNumber: record.PhoneNumber,
@@ -56,7 +56,7 @@ func (impl *UserMapperImpl) SelectByUsername(username string, tx ...orm.TxOrmer)
 	return do, nil
 }
 
-func (impl *UserMapperImpl) Update(user *userDO.UserDO, tx ...orm.TxOrmer) error {
+func (impl *UserMapperImpl) Update(user userDO.UserDO, tx ...orm.TxOrmer) error {
 	executor := getQueryExecutor(tx...)
 
 	// todo 有更复杂处理

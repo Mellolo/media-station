@@ -7,50 +7,34 @@ import (
 
 // +k8s:deepcopy-gen=true
 type GalleryCreateDTO struct {
-	Name            string   `json:"name"`
-	Description     string   `json:"description"`
-	Actors          []int64  `json:"actors"`
-	Tags            []string `json:"tags"`
-	Uploader        string   `json:"uploader"`
-	PermissionLevel string   `json:"permissionLevel"`
-}
-
-// +k8s:deepcopy-gen=true
-type GalleryUpdateDTO struct {
-	Id              int      `json:"id"`
-	Name            string   `json:"name"`
-	Description     string   `json:"description"`
-	Actors          []int64  `json:"actors"`
-	Tags            []string `json:"tags"`
-	Uploader        string   `json:"uploader"`
-	PermissionLevel string   `json:"permissionLevel"`
-}
-
-// +k8s:deepcopy-gen=true
-type GallerySearchDTO struct {
-	Keyword string   `json:"keyword"`
-	Actors  []int64  `json:"actors"`
-	Tags    []string `json:"tags"`
-}
-
-// +k8s:deepcopy-gen=true
-type GalleryItemDTO struct {
-	Id              int64  `json:"id"`
 	Name            string `json:"name"`
-	CoverUrl        string `json:"coverUrl"`
+	Description     string `json:"description"`
+	Uploader        string `json:"uploader"`
 	PermissionLevel string `json:"permissionLevel"`
 }
 
 // +k8s:deepcopy-gen=true
-type GalleryPageDTO struct {
+type GalleryUpdateDTO struct {
+	Id              int64  `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	PermissionLevel string `json:"permissionLevel"`
+}
+
+// +k8s:deepcopy-gen=true
+type GallerySearchDTO struct {
+	Ids     []int64 `json:"ids"`
+	Keyword string  `json:"keyword"`
+}
+
+// +k8s:deepcopy-gen=true
+type GalleryDTO struct {
 	Id              int64    `json:"id"`
 	Name            string   `json:"name"`
 	Description     string   `json:"description"`
-	Actors          []int64  `json:"actors"`
-	Tags            []string `json:"tags"`
 	Uploader        string   `json:"uploader"`
-	CoverUrl        string   `json:"coverUrl"`
-	GalleryUrl      string   `json:"galleryUrl"`
+	DirPath         string   `json:"dirPath"`
+	PicPaths        []string `json:"picPaths"`
 	PermissionLevel string   `json:"permissionLevel"`
 }
 

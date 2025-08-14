@@ -12,12 +12,9 @@ type GalleryDO struct {
 	CreateAt        string
 	Name            string
 	Description     string
-	PageCount       int
-	Actors          []int64
-	Tags            []string
 	Uploader        string
-	CoverUrl        string
-	GalleryUrl      string
+	DirPath         string
+	PicPaths        []string
 	PermissionLevel string
 }
 

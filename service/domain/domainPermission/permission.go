@@ -6,7 +6,7 @@ import (
 )
 
 type PermissionDomainService interface {
-	IsAccessAllowed(user userDO.UserDO, uploader, permissionLevel string) bool
+	IsVisible(user userDO.UserDO, uploader, permissionLevel string) bool
 }
 
 func NewPermissionDomainService() *PermissionDomainServiceImpl {
@@ -16,7 +16,7 @@ func NewPermissionDomainService() *PermissionDomainServiceImpl {
 type PermissionDomainServiceImpl struct {
 }
 
-func (impl PermissionDomainServiceImpl) IsAccessAllowed(user userDO.UserDO, uploader, permissionLevel string) bool {
+func (impl PermissionDomainServiceImpl) IsVisible(user userDO.UserDO, uploader, permissionLevel string) bool {
 	if user.Username != "" && user.Username == uploader && permissionLevel != enum.PermissionForbidden {
 		return true
 	}
