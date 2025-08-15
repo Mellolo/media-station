@@ -190,7 +190,9 @@ func (impl *ActorFacade) UpdateActor(c *web.Controller) {
 		}
 
 		origin := impl.actorBizService.UpdateActor(ctx, dto.Id, dto, coverDTO, tx)
-		lastCoverUrl = origin.CoverUrl
+		if coverDTO.File != nil {
+			lastCoverUrl = origin.CoverUrl
+		}
 	})
 
 	if lastCoverUrl != "" {
@@ -209,6 +211,8 @@ func (impl *ActorFacade) DeleteActor(c *web.Controller) {
 	db.DoTransaction(func(tx orm.TxOrmer) {
 		origin := impl.actorBizService.DeleteActor(ctx, id, tx)
 		lastCoverUrl = origin.CoverUrl
+
+		impl.performBizService.DeleteActor(ctx, id, tx)
 	})
 
 	impl.actorBizService.RemoveLastCover(ctx, lastCoverUrl)

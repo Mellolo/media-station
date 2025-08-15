@@ -26,6 +26,10 @@ func (impl *TagMapperImpl) InsertOrUpdateTagsOfArt(artType string, artId int64, 
 		return err
 	}
 
+	if len(items) == 0 {
+		return nil
+	}
+
 	executor := getQueryExecutor(tx...)
 
 	var records []tagDAO.TagRecord

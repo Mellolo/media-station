@@ -26,6 +26,10 @@ func (impl PerformMapperImpl) InsertOrUpdateActorsOfArt(artType string, artId in
 		return err
 	}
 
+	if len(items) == 0 {
+		return nil
+	}
+
 	executor := getQueryExecutor(tx...)
 
 	var records []performDAO.PerformRecord
