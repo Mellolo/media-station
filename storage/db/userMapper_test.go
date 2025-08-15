@@ -54,14 +54,8 @@ func TestUserMapperImpl_Insert(t *testing.T) {
 			name: "case1",
 			args: args{
 				user: userDO.UserDO{
-					Username:    "test_user",
-					Password:    "password123",
-					PhoneNumber: "1234567890",
-					WechatId:    "wechat123",
-					Art: userDO.UserArt{
-						VideoIds:   []int64{1},
-						GalleryIds: nil,
-					},
+					Username: "test_user",
+					Password: "password123",
 				},
 				tx: nil,
 			},
@@ -96,14 +90,8 @@ func TestUserMapperImpl_SelectById(t *testing.T) {
 				tx:       nil,
 			},
 			want: userDO.UserDO{
-				Username:    "test_user",
-				Password:    "password123",
-				PhoneNumber: "1234567890",
-				WechatId:    "wechat123",
-				Art: userDO.UserArt{
-					VideoIds:   []int64{1},
-					GalleryIds: nil,
-				},
+				Username: "test_user",
+				Password: "password123",
 			},
 			wantErr: false,
 		},
@@ -138,14 +126,8 @@ func TestUserMapperImpl_Update(t *testing.T) {
 			name: "case1",
 			args: args{
 				user: userDO.UserDO{
-					Username:    "test_user",
-					Password:    "new_password",
-					PhoneNumber: "0987654321",
-					WechatId:    "wechat456",
-					Art: userDO.UserArt{
-						VideoIds:   nil,
-						GalleryIds: nil,
-					},
+					Username: "test_user",
+					Password: "new_password",
 				},
 			},
 			wantErr: false,

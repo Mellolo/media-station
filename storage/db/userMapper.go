@@ -2,7 +2,6 @@ package db
 
 import (
 	"github.com/beego/beego/v2/client/orm"
-	"github.com/mellolo/common/utils/jsonUtil"
 	"media-station/models/dao/userDAO"
 	"media-station/models/do/userDO"
 )
@@ -25,11 +24,9 @@ func (impl *UserMapperImpl) Insert(user userDO.UserDO, tx ...orm.TxOrmer) (int64
 
 	// todo 有更复杂处理
 	record := userDAO.UserRecord{
-		Username:    user.Username,
-		Password:    user.Password,
-		PhoneNumber: user.PhoneNumber,
-		WechatId:    user.WechatId,
-		Details:     jsonUtil.GetJsonString(user.Art),
+		Username: user.Username,
+		Password: user.Password,
+		Details:  "{}",
 	}
 
 	return executor.Insert(&record)
@@ -44,14 +41,10 @@ func (impl *UserMapperImpl) SelectByUsername(username string, tx ...orm.TxOrmer)
 	}
 
 	// todo 有更复杂处理
-	var userArt userDO.UserArt
-	jsonUtil.UnmarshalJsonString(record.Details, &userArt)
 	do := userDO.UserDO{
-		Username:    record.Username,
-		Password:    record.Password,
-		PhoneNumber: record.PhoneNumber,
-		WechatId:    record.WechatId,
-		Art:         userArt,
+		Id:       record.Id,
+		Username: record.Username,
+		Password: record.Password,
 	}
 	return do, nil
 }
@@ -59,12 +52,8 @@ func (impl *UserMapperImpl) SelectByUsername(username string, tx ...orm.TxOrmer)
 func (impl *UserMapperImpl) Update(user userDO.UserDO, tx ...orm.TxOrmer) error {
 	executor := getQueryExecutor(tx...)
 
-	// todo 有更复杂处理
 	_, err := executor.QueryTable(userDAO.TableUser).Filter("username", user.Username).Update(orm.Params{
-		"password":     user.Password,
-		"phone_number": user.PhoneNumber,
-		"wechat_id":    user.WechatId,
-		"details":      jsonUtil.GetJsonString(user.Art),
+		"password": user.Password,
 	})
 	return err
 }

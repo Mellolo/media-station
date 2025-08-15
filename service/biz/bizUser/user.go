@@ -38,10 +38,6 @@ func (impl UserBizServiceImpl) GetProfile(ctx contextDTO.ContextDTO, username st
 	}
 	return userDTO.UserProfileDTO{
 		Username: user.Username,
-		Details: userDTO.UserDetailsDTO{
-			VideoIds:   user.Art.VideoIds,
-			GalleryIds: user.Art.GalleryIds,
-		},
 	}
 }
 
