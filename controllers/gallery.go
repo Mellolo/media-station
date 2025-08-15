@@ -31,6 +31,19 @@ func (c *GalleryController) Page() {
 	})
 }
 
+// @router pic/:id/:page [get]
+func (c *GalleryController) Picture() {
+	templates.ServePictureTemplate(c.Ctx, func() templates.PictureTemplate {
+
+		vo := facade.NewGalleryFacade().ShowPage(&c.Controller)
+
+		return templates.PictureTemplate{
+			Reader: vo.Reader,
+			Header: vo.Header,
+		}
+	})
+}
+
 type GalleryAuthController struct {
 	web.Controller
 }
@@ -57,15 +70,15 @@ func (c *GalleryAuthController) Upload() {
 	})
 }
 
-// @router pic/:id/:page [get]
-func (c *GalleryAuthController) Picture() {
-	templates.ServePictureTemplate(c.Ctx, func() templates.PictureTemplate {
-
-		vo := facade.NewGalleryFacade().ShowPage(&c.Controller)
-
-		return templates.PictureTemplate{
-			Reader: vo.Reader,
-			Header: vo.Header,
-		}
-	})
-}
+//// @router pic/:id/:page [get]
+//func (c *GalleryAuthController) Picture() {
+//	templates.ServePictureTemplate(c.Ctx, func() templates.PictureTemplate {
+//
+//		vo := facade.NewGalleryFacade().ShowPage(&c.Controller)
+//
+//		return templates.PictureTemplate{
+//			Reader: vo.Reader,
+//			Header: vo.Header,
+//		}
+//	})
+//}

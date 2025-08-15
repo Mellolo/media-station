@@ -63,15 +63,6 @@ func init() {
 
 	beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"],
 		beego.ControllerComments{
-			Method:           "Picture",
-			Router:           `pic/:id/:page`,
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"],
-		beego.ControllerComments{
 			Method:           "Upload",
 			Router:           `upload`,
 			AllowHTTPMethods: []string{"post"},
@@ -83,6 +74,15 @@ func init() {
 		beego.ControllerComments{
 			Method:           "Page",
 			Router:           `page/:id`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryController"],
+		beego.ControllerComments{
+			Method:           "Picture",
+			Router:           `pic/:id/:page`,
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
