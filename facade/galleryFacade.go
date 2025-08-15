@@ -135,7 +135,7 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller) {
 	// 描述
 	description := c.GetString("description", "")
 	// 演员
-	actors := impl.GetStringAsInt64List(c, "actors")
+	actors := impl.GetStringAsInt64List(c, "actorIds")
 	actors = sets.NewInt64(actors...).List()
 	// tags
 	tags := impl.GetStringAsStringList(c, "tags")
