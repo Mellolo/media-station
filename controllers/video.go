@@ -9,7 +9,6 @@ import (
 	"media-station/controllers/templates"
 	"media-station/facade"
 	"media-station/util"
-	"time"
 )
 
 type VideoController struct {
@@ -102,9 +101,7 @@ func (c *VideoAuthController) Update() {
 // @router delete/:id [delete]
 func (c *VideoAuthController) Delete() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
-		start := time.Now()
 		facade.NewVideoFacade().DeleteVideo(&c.Controller)
-		logs.Info("delete video time:", time.Now().Sub(start))
 		return templates.NewJsonTemplate200(nil)
 	})
 }

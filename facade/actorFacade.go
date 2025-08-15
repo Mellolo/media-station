@@ -195,10 +195,11 @@ func (impl *ActorFacade) UpdateActor(c *web.Controller) {
 		}
 	})
 
-	if lastCoverUrl != "" {
-		impl.actorBizService.RemoveLastCover(ctx, lastCoverUrl)
-	}
-
+	go func() {
+		if lastCoverUrl != "" {
+			impl.actorBizService.RemoveLastCover(ctx, lastCoverUrl)
+		}
+	}()
 }
 
 func (impl *ActorFacade) DeleteActor(c *web.Controller) {
@@ -215,5 +216,9 @@ func (impl *ActorFacade) DeleteActor(c *web.Controller) {
 		impl.performBizService.DeleteActor(ctx, id, tx)
 	})
 
-	impl.actorBizService.RemoveLastCover(ctx, lastCoverUrl)
+	go func() {
+		if lastCoverUrl != "" {
+			impl.actorBizService.RemoveLastCover(ctx, lastCoverUrl)
+		}
+	}()
 }
