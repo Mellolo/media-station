@@ -64,7 +64,7 @@ func init() {
 	beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"],
 		beego.ControllerComments{
 			Method:           "Picture",
-			Router:           `:id/:page`,
+			Router:           `pic/:id/:page`,
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,

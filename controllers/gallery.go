@@ -57,7 +57,7 @@ func (c *GalleryAuthController) Upload() {
 	})
 }
 
-// @router :id/:page [get]
+// @router pic/:id/:page [get]
 func (c *GalleryAuthController) Picture() {
 	templates.ServePictureTemplate(c.Ctx, func() templates.PictureTemplate {
 
