@@ -21,6 +21,7 @@ limitations under the License.
 package actorVO
 
 import (
+	galleryVO "media-station/models/vo/galleryVO"
 	videoVO "media-station/models/vo/videoVO"
 )
 
@@ -48,9 +49,9 @@ func (in *ActorPageVO) DeepCopyInto(out *ActorPageVO) {
 		*out = make([]videoVO.VideoItemVO, len(*in))
 		copy(*out, *in)
 	}
-	if in.GalleryIds != nil {
-		in, out := &in.GalleryIds, &out.GalleryIds
-		*out = make([]int64, len(*in))
+	if in.Galleries != nil {
+		in, out := &in.Galleries, &out.Galleries
+		*out = make([]galleryVO.GalleryItemVO, len(*in))
 		copy(*out, *in)
 	}
 	return
