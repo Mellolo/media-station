@@ -83,6 +83,7 @@ func (impl *GalleryFacade) SearchGallery(c *web.Controller) []galleryVO.GalleryI
 			voList = append(voList, galleryVO.GalleryItemVO{
 				Id:              item.Id,
 				Name:            item.Name,
+				PageCount:       len(item.PicPaths),
 				PermissionLevel: item.PermissionLevel,
 			})
 		}
