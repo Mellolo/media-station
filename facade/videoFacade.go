@@ -183,8 +183,8 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 	// 描述
 	description := c.GetString("description", "")
 	// 演员
-	actors := impl.GetStringAsInt64List(c, "actors")
-	actors = sets.NewInt64(actors...).List()
+	actorIds := impl.GetStringAsInt64List(c, "actorIds")
+	actorIds = sets.NewInt64(actorIds...).List()
 	// tags
 	tags := impl.GetStringAsStringList(c, "tags")
 	tags = sets.NewString(tags...).List()
@@ -207,7 +207,7 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 		createDTO := videoDTO.VideoCreateDTO{
 			Name:            name,
 			Description:     description,
-			Actors:          actors,
+			Actors:          actorIds,
 			Tags:            tags,
 			Uploader:        uploader,
 			PermissionLevel: permissionLevel,
@@ -219,7 +219,7 @@ func (impl *VideoFacade) UploadVideo(c *web.Controller) {
 		impl.performBizService.InsertOrUpdateActorsOfArt(ctx, performDTO.ArtPerformDTO{
 			ArtType:  enum.ArtVideo,
 			ArtId:    id,
-			ActorIds: actors,
+			ActorIds: actorIds,
 		}, tx)
 		// 更新作品tag
 		impl.tagBizService.InsertOrUpdateTagsOfArt(ctx, tagDTO.ArtTagDTO{
@@ -277,12 +277,14 @@ func (impl *VideoFacade) DeleteVideo(c *web.Controller) {
 		impl.tagBizService.DeleteArt(ctx, enum.ArtVideo, id, tx)
 	})
 
-	if coverUrl != "" {
-		impl.videoBizService.RemoveVideoCover(ctx, coverUrl)
-	}
-	if videoUrl != "" {
-		impl.videoBizService.RemoveVideoFile(ctx, videoUrl)
-	}
+	go func() {
+		if coverUrl != "" {
+			impl.videoBizService.RemoveVideoCover(ctx, coverUrl)
+		}
+		if videoUrl != "" {
+			impl.videoBizService.RemoveVideoFile(ctx, videoUrl)
+		}
+	}()
 }
 
 func (impl *VideoFacade) PlayVideo(c *web.Controller) videoVO.VideoFileVO {
