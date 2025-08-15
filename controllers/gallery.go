@@ -24,7 +24,7 @@ func (c *GalleryController) SearchGallery() {
 }
 
 // @router search/tag [get]
-func (c *VideoController) SearchGalleryByTag() {
+func (c *GalleryController) SearchGalleryByTag() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
 		voList := facade.NewGalleryFacade().SearchGalleryByTag(&c.Controller)
 		return templates.NewJsonTemplate200(voList)
