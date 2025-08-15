@@ -44,6 +44,19 @@ func (c *GalleryController) Picture() {
 	})
 }
 
+// @router cover/:id/ [get]
+func (c *GalleryController) Cover() {
+	templates.ServePictureTemplate(c.Ctx, func() templates.PictureTemplate {
+
+		vo := facade.NewGalleryFacade().GetGalleryCover(&c.Controller)
+
+		return templates.PictureTemplate{
+			Reader: vo.Reader,
+			Header: vo.Header,
+		}
+	})
+}
+
 type GalleryAuthController struct {
 	web.Controller
 }
@@ -66,6 +79,14 @@ func (c *GalleryAuthController) Upload() {
 			}
 		}()
 
+		return templates.NewJsonTemplate200(nil)
+	})
+}
+
+// @router delete/:id [delete]
+func (c *GalleryAuthController) Delete() {
+	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
+		facade.NewGalleryFacade().DeleteGallery(&c.Controller)
 		return templates.NewJsonTemplate200(nil)
 	})
 }

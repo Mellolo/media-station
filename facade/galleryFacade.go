@@ -68,9 +68,9 @@ func (impl *GalleryFacade) SearchGallery(c *web.Controller) []galleryVO.GalleryI
 		}
 
 		if len(actors) > 0 && len(tags) > 0 {
-			videoIdSet := sets.NewInt64(impl.performBizService.SelectArtByActor(ctx, enum.ArtGallery, actors, tx)...)
-			videoIdSet = videoIdSet.Intersection(sets.NewInt64(impl.tagBizService.SelectArtByTag(ctx, enum.ArtGallery, tags, tx)...))
-			searchDTO.Ids = videoIdSet.List()
+			galleryIdSet := sets.NewInt64(impl.performBizService.SelectArtByActor(ctx, enum.ArtGallery, actors, tx)...)
+			galleryIdSet = galleryIdSet.Intersection(sets.NewInt64(impl.tagBizService.SelectArtByTag(ctx, enum.ArtGallery, tags, tx)...))
+			searchDTO.Ids = galleryIdSet.List()
 		} else if len(actors) > 0 {
 			searchDTO.Ids = impl.performBizService.SelectArtByActor(ctx, enum.ArtGallery, actors, tx)
 		} else {
@@ -83,6 +83,36 @@ func (impl *GalleryFacade) SearchGallery(c *web.Controller) []galleryVO.GalleryI
 			voList = append(voList, galleryVO.GalleryItemVO{
 				Id:              item.Id,
 				Name:            item.Name,
+				PermissionLevel: item.PermissionLevel,
+			})
+		}
+	})
+
+	return voList
+}
+
+func (impl *GalleryFacade) SearchGalleryByTag(c *web.Controller) []galleryVO.GalleryItemVO {
+	// 上下文
+	ctx := impl.GetContext(c)
+	// tag
+	tagName := c.GetString("tag", "")
+
+	var voList []galleryVO.GalleryItemVO
+	db.DoTransaction(func(tx orm.TxOrmer) {
+		galleryIds := impl.tagBizService.SelectArtByTag(ctx, enum.ArtGallery, []string{tagName}, tx)
+		if len(galleryIds) == 0 {
+			return
+		}
+
+		items := impl.galleryBizService.SearchGallery(ctx, galleryDTO.GallerySearchDTO{
+			Ids: galleryIds,
+		}, tx)
+
+		for _, item := range items {
+			voList = append(voList, galleryVO.GalleryItemVO{
+				Id:              item.Id,
+				Name:            item.Name,
+				PageCount:       len(item.PicPaths),
 				PermissionLevel: item.PermissionLevel,
 			})
 		}
@@ -125,6 +155,20 @@ func (impl *GalleryFacade) GetGalleryPage(c *web.Controller) galleryVO.GalleryPa
 	})
 
 	return vo
+}
+
+func (impl *GalleryFacade) GetGalleryCover(c *web.Controller) galleryVO.GalleryFileVO {
+	// 上下文
+	ctx := impl.GetContext(c)
+	// id
+	id := impl.GetRestfulParamInt64(c, ":id")
+
+	dto := impl.galleryBizService.ShowGalleryPage(ctx, id, 1)
+
+	return galleryVO.GalleryFileVO{
+		Header: dto.Header,
+		Reader: dto.Reader,
+	}
 }
 
 func (impl *GalleryFacade) UploadGallery(c *web.Controller) {
@@ -186,6 +230,32 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller) {
 			Tags:    tags,
 		}, tx)
 	})
+}
+
+func (impl *GalleryFacade) DeleteGallery(c *web.Controller) {
+	// 上下文
+	ctx := impl.GetContext(c)
+	// id
+	id := impl.GetRestfulParamInt64(c, ":id")
+
+	var dir string
+	var filenames []string
+	db.DoTransaction(func(tx orm.TxOrmer) {
+		// 更新视频
+		gallery := impl.galleryBizService.DeleteGallery(ctx, id, tx)
+		dir = gallery.DirPath
+		filenames = gallery.PicPaths
+		// 更新作品actor出演关系
+		impl.performBizService.DeleteArt(ctx, enum.ArtGallery, id, tx)
+		// 更新作品tag
+		impl.tagBizService.DeleteArt(ctx, enum.ArtGallery, id, tx)
+	})
+
+	go func() {
+		if dir != "" {
+			impl.galleryBizService.RemoveGalleryDir(ctx, dir, filenames)
+		}
+	}()
 }
 
 func (impl *GalleryFacade) ShowPage(c *web.Controller) galleryVO.GalleryFileVO {
