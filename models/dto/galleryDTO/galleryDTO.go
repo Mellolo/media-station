@@ -15,10 +15,17 @@ type GalleryCreateDTO struct {
 
 // +k8s:deepcopy-gen=true
 type GalleryUpdateDTO struct {
-	Id              int64  `json:"id"`
-	Name            string `json:"name"`
-	Description     string `json:"description"`
-	PermissionLevel string `json:"permissionLevel"`
+	Id              int64                  `json:"id"`
+	Name            string                 `json:"name"`
+	Description     string                 `json:"description"`
+	Pages           []GalleryUpdatePageDTO `json:"pages"`
+	PermissionLevel string                 `json:"permissionLevel"`
+}
+
+// +k8s:deepcopy-gen=true
+type GalleryUpdatePageDTO struct {
+	IsNewUploaded bool `json:"isNewUploaded"`
+	Index         int  `json:"index"`
 }
 
 // +k8s:deepcopy-gen=true

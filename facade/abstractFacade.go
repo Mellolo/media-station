@@ -59,6 +59,10 @@ func (facade *AbstractFacade) GetStringAsStringList(c *web.Controller, key strin
 	return results
 }
 
+func (facade *AbstractFacade) GetStringAsStruct(c *web.Controller, key string, obj interface{}) {
+	jsonUtil.UnmarshalJsonString(c.GetString(key, "null"), obj)
+}
+
 func (facade *AbstractFacade) GetRestfulParamInt(c *web.Controller, key string) int {
 	str := c.Ctx.Input.Param(":page")
 	result, err := strconv.Atoi(str)

@@ -176,7 +176,7 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller) {
 	// 上下文
 	ctx := impl.GetContext(c)
 	// 名称
-	name := c.GetString("name", "")
+	name := impl.GetStringNotEmpty(c, "name")
 	// 描述
 	description := c.GetString("description", "")
 	// 演员
@@ -216,6 +216,10 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller) {
 			})
 		}
 
+		if len(galleryFileDTOList) == 0 {
+			panic(errors.NewError("no images in this upload"))
+		}
+
 		// 创建图集
 		id := impl.galleryBizService.CreateGallery(ctx, createDTO, galleryFileDTOList)
 		// 更新作品actor出演关系
@@ -231,6 +235,84 @@ func (impl *GalleryFacade) UploadGallery(c *web.Controller) {
 			Tags:    tags,
 		}, tx)
 	})
+}
+
+func (impl *GalleryFacade) UpdateGallery(c *web.Controller) {
+	// 上下文
+	ctx := impl.GetContext(c)
+	// id
+	id := impl.GetInt64NotInvalid(c, "id")
+	// 名称
+	name := impl.GetStringNotEmpty(c, "name")
+	// 描述
+	description := c.GetString("description", "")
+	// 演员
+	actors := impl.GetStringAsInt64List(c, "actorIds")
+	actors = sets.NewInt64(actors...).List()
+	// tags
+	tags := impl.GetStringAsStringList(c, "tags")
+	tags = sets.NewString(tags...).List()
+	// 上传页码
+	var pages []galleryDTO.GalleryUpdatePageDTO
+	impl.GetStringAsStruct(c, "pages", &pages)
+	if len(pages) == 0 {
+		panic(errors.NewError("no images in this update"))
+	}
+	// 权限
+	permissionLevel := c.GetString("permissionLevel", "")
+
+	// 图片文件
+	headers, err := c.GetFiles("files")
+	if err != nil {
+		panic(errors.WrapError(err, "get gallery files failed"))
+	}
+
+	var dir string
+	var filenames []string
+	db.DoTransaction(func(tx orm.TxOrmer) {
+		createDTO := galleryDTO.GalleryUpdateDTO{
+			Id:              id,
+			Name:            name,
+			Description:     description,
+			Pages:           pages,
+			PermissionLevel: permissionLevel,
+		}
+
+		var galleryFileDTOList []fileDTO.FileDTO
+		for _, header := range headers {
+			file, fileErr := header.Open()
+			if fileErr != nil {
+				panic(errors.WrapError(fileErr, "open gallery file failed"))
+			}
+			galleryFileDTOList = append(galleryFileDTOList, fileDTO.FileDTO{
+				File: file,
+				Size: header.Size,
+			})
+		}
+
+		// 创建图集
+		origin := impl.galleryBizService.UpdateGallery(ctx, createDTO, galleryFileDTOList)
+		dir = origin.DirPath
+		filenames = origin.PicPaths
+		// 更新作品actor出演关系
+		impl.performBizService.InsertOrUpdateActorsOfArt(ctx, performDTO.ArtPerformDTO{
+			ArtType:  enum.ArtGallery,
+			ArtId:    id,
+			ActorIds: actors,
+		}, tx)
+		// 更新作品tag
+		impl.tagBizService.InsertOrUpdateTagsOfArt(ctx, tagDTO.ArtTagDTO{
+			ArtType: enum.ArtGallery,
+			ArtId:   id,
+			Tags:    tags,
+		}, tx)
+	})
+
+	go func() {
+		if dir != "" {
+			impl.galleryBizService.RemoveGalleryDir(ctx, dir, filenames)
+		}
+	}()
 }
 
 func (impl *GalleryFacade) DeleteGallery(c *web.Controller) {

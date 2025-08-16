@@ -15,6 +15,7 @@ import (
 	"media-station/service/domain/domainPermission"
 	"media-station/storage/db"
 	"media-station/storage/oss"
+	"strconv"
 	"strings"
 )
 
@@ -29,7 +30,7 @@ type GalleryBizService interface {
 	SearchGallery(ctx contextDTO.ContextDTO, searchDTO galleryDTO.GallerySearchDTO, tx ...orm.TxOrmer) []galleryDTO.GalleryDTO
 	SearchGalleryByKeyword(ctx contextDTO.ContextDTO, keyword string, tx ...orm.TxOrmer) []galleryDTO.GalleryDTO
 	CreateGallery(ctx contextDTO.ContextDTO, createDTO galleryDTO.GalleryCreateDTO, picDTOList []fileDTO.FileDTO, tx ...orm.TxOrmer) int64
-	UpdateGallery(ctx contextDTO.ContextDTO, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer) galleryDTO.GalleryDTO
+	UpdateGallery(ctx contextDTO.ContextDTO, updateDTO galleryDTO.GalleryUpdateDTO, picDTOList []fileDTO.FileDTO, tx ...orm.TxOrmer) galleryDTO.GalleryDTO
 	DeleteGallery(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) galleryDTO.GalleryDTO
 	ShowGalleryPage(ctx contextDTO.ContextDTO, id int64, page int) galleryDTO.PictureFileDTO
 
@@ -176,7 +177,7 @@ func (impl *GalleryBizServiceImpl) CreateGallery(ctx contextDTO.ContextDTO, crea
 	return id
 }
 
-func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, updateDTO galleryDTO.GalleryUpdateDTO, tx ...orm.TxOrmer) galleryDTO.GalleryDTO {
+func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, updateDTO galleryDTO.GalleryUpdateDTO, picDTOList []fileDTO.FileDTO, tx ...orm.TxOrmer) galleryDTO.GalleryDTO {
 	gallery, err := impl.galleryMapper.SelectById(updateDTO.Id, tx...)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("gallery [%d] doesn't exist", updateDTO.Id)))
@@ -189,6 +190,33 @@ func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, upda
 	if sets.NewString(enum.PermissionLevels...).Has(updateDTO.PermissionLevel) {
 		gallery.PermissionLevel = updateDTO.PermissionLevel
 	}
+
+	// 更新画廊资源
+	dir := impl.idGenerator.GenerateId(galleryIdGenerateKey)
+	var picPaths []string
+	for _, pageDTO := range updateDTO.Pages {
+		var picDTO fileDTO.FileDTO
+		if pageDTO.IsNewUploaded {
+			picDTO = picDTOList[pageDTO.Index-1]
+		} else {
+			picDO := impl.pictureStorage.Download(bucketGallery, gallery.PicPaths[pageDTO.Index-1])
+			size, sizeErr := strconv.ParseInt(picDO.Header.Get("Content-Length"), 10, 64)
+			if sizeErr != nil {
+				panic(errors.WrapError(sizeErr, "parse pic size failed"))
+			}
+			picDTO = fileDTO.FileDTO{
+				File: picDO.Reader,
+				Size: size,
+			}
+		}
+
+		fileName := fmt.Sprintf("%s.jpg", impl.idGenerator.GenerateId(dir))
+		path := fmt.Sprintf("%s/%s", dir, fileName)
+		impl.pictureStorage.Upload(bucketGallery, path, picDTO.File, picDTO.Size)
+		picPaths = append(picPaths, fileName)
+	}
+	gallery.DirPath = dir
+	gallery.PicPaths = picPaths
 
 	// 更新写入数据库
 	err = impl.galleryMapper.Update(updateDTO.Id, gallery, tx...)
