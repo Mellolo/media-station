@@ -262,10 +262,10 @@ func (impl *GalleryFacade) UpdateGallery(c *web.Controller) {
 	permissionLevel := c.GetString("permissionLevel", "")
 
 	// 图片文件
-	headers, err := c.GetFiles("files")
-	if err != nil {
-		panic(errors.WrapError(err, "get gallery files failed"))
-	}
+	headers, _ := c.GetFiles("files")
+	//if err != nil {
+	//	panic(errors.WrapError(err, "get gallery files failed"))
+	//}
 
 	var dir string
 	var filenames []string

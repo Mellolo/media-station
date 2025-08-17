@@ -199,7 +199,7 @@ func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, upda
 		if pageDTO.IsNewUploaded {
 			picDTO = picDTOList[pageDTO.Index-1]
 		} else {
-			picDO := impl.pictureStorage.Download(bucketGallery, gallery.PicPaths[pageDTO.Index-1])
+			picDO := impl.pictureStorage.Download(bucketGallery, fmt.Sprintf("%s/%s", gallery.DirPath, gallery.PicPaths[pageDTO.Index-1]))
 			size, sizeErr := strconv.ParseInt(picDO.Header.Get("Content-Length"), 10, 64)
 			if sizeErr != nil {
 				panic(errors.WrapError(sizeErr, "parse pic size failed"))
