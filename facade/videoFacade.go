@@ -122,6 +122,27 @@ func (impl *VideoFacade) SearchVideoByTag(c *web.Controller) []videoVO.VideoItem
 	return voList
 }
 
+func (impl *VideoFacade) RecommendVideo(c *web.Controller) []videoVO.VideoItemVO {
+	// 上下文
+	ctx := impl.GetContext(c)
+
+	var voList []videoVO.VideoItemVO
+	db.DoTransaction(func(tx orm.TxOrmer) {
+		items := impl.videoBizService.SearchVideoByKeyword(ctx, "", tx)
+
+		for _, item := range items {
+			voList = append(voList, videoVO.VideoItemVO{
+				Id:              item.Id,
+				Name:            item.Name,
+				Duration:        item.Duration,
+				PermissionLevel: item.PermissionLevel,
+			})
+		}
+	})
+
+	return voList
+}
+
 func (impl *VideoFacade) GetVideoPage(c *web.Controller) videoVO.VideoPageVO {
 	// 上下文
 	ctx := impl.GetContext(c)

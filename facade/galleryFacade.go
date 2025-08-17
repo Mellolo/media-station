@@ -122,6 +122,28 @@ func (impl *GalleryFacade) SearchGalleryByTag(c *web.Controller) []galleryVO.Gal
 	return voList
 }
 
+func (impl *GalleryFacade) RecommendGallery(c *web.Controller) []galleryVO.GalleryItemVO {
+	// 上下文
+	ctx := impl.GetContext(c)
+
+	var voList []galleryVO.GalleryItemVO
+	db.DoTransaction(func(tx orm.TxOrmer) {
+
+		items := impl.galleryBizService.SearchGalleryByKeyword(ctx, "", tx)
+
+		for _, item := range items {
+			voList = append(voList, galleryVO.GalleryItemVO{
+				Id:              item.Id,
+				Name:            item.Name,
+				PageCount:       len(item.PicPaths),
+				PermissionLevel: item.PermissionLevel,
+			})
+		}
+	})
+
+	return voList
+}
+
 func (impl *GalleryFacade) GetGalleryPage(c *web.Controller) galleryVO.GalleryPageVO {
 	// 上下文
 	ctx := impl.GetContext(c)

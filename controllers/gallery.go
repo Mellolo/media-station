@@ -31,6 +31,14 @@ func (c *GalleryController) SearchGalleryByTag() {
 	})
 }
 
+// @router recommend [get]
+func (c *GalleryController) RecommendGallery() {
+	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
+		voList := facade.NewGalleryFacade().RecommendGallery(&c.Controller)
+		return templates.NewJsonTemplate200(voList)
+	})
+}
+
 // @router page/:id [get]
 func (c *GalleryController) Page() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {

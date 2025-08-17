@@ -117,6 +117,15 @@ func init() {
 
 	beego.GlobalControllerRouter["media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryController"],
 		beego.ControllerComments{
+			Method:           "RecommendGallery",
+			Router:           `recommend`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryController"],
+		beego.ControllerComments{
 			Method:           "SearchGallery",
 			Router:           `search`,
 			AllowHTTPMethods: []string{"get"},
@@ -218,6 +227,15 @@ func init() {
 		beego.ControllerComments{
 			Method:           "Play",
 			Router:           `play/:id`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoController"],
+		beego.ControllerComments{
+			Method:           "RecommendVideo",
+			Router:           `recommend`,
 			AllowHTTPMethods: []string{"get"},
 			MethodParams:     param.Make(),
 			Filters:          nil,

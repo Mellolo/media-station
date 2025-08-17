@@ -31,6 +31,14 @@ func (c *VideoController) SearchVideoByTag() {
 	})
 }
 
+// @router recommend [get]
+func (c *VideoController) RecommendVideo() {
+	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
+		voList := facade.NewVideoFacade().RecommendVideo(&c.Controller)
+		return templates.NewJsonTemplate200(voList)
+	})
+}
+
 // @router page/:id [get]
 func (c *VideoController) Page() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
