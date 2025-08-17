@@ -192,12 +192,14 @@ func (impl *GalleryBizServiceImpl) UpdateGallery(ctx contextDTO.ContextDTO, upda
 	}
 
 	// 更新画廊资源
+	newIndex := 0
 	dir := impl.idGenerator.GenerateId(galleryIdGenerateKey)
 	var picPaths []string
 	for _, pageDTO := range updateDTO.Pages {
 		var picDTO fileDTO.FileDTO
 		if pageDTO.IsNewUploaded {
-			picDTO = picDTOList[pageDTO.Index-1]
+			picDTO = picDTOList[newIndex]
+			newIndex++
 		} else {
 			picDO := impl.pictureStorage.Download(bucketGallery, fmt.Sprintf("%s/%s", gallery.DirPath, gallery.PicPaths[pageDTO.Index-1]))
 			size, sizeErr := strconv.ParseInt(picDO.Header.Get("Content-Length"), 10, 64)
