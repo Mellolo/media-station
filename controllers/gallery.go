@@ -95,19 +95,20 @@ func (c *GalleryAuthController) Upload() {
 func (c *GalleryAuthController) Update() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
 		// 上传业务流程
-		go func() {
-			panicContext := errors.CatchPanic(func() {
-				facade.NewGalleryFacade().UpdateGallery(&c.Controller)
-			})
-			if panicContext.Err != nil {
-				uniqueId, _ := uuid.NewV7()
-				logs.Error(
-					fmt.Sprintf("error url(%s)\n%s",
-						c.Ctx.Input.URL(),
-						util.FormatErrorLog(uniqueId.String(), panicContext.Err.Error(), panicContext.RecoverStack),
-					))
-			}
-		}()
+		//go func() {
+		//	panicContext := errors.CatchPanic(func() {
+		//		facade.NewGalleryFacade().UpdateGallery(&c.Controller)
+		//	})
+		//	if panicContext.Err != nil {
+		//		uniqueId, _ := uuid.NewV7()
+		//		logs.Error(
+		//			fmt.Sprintf("error url(%s)\n%s",
+		//				c.Ctx.Input.URL(),
+		//				util.FormatErrorLog(uniqueId.String(), panicContext.Err.Error(), panicContext.RecoverStack),
+		//			))
+		//	}
+		//}()
+		facade.NewGalleryFacade().UpdateGallery(&c.Controller)
 
 		return templates.NewJsonTemplate200(nil)
 	})
