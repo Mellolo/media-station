@@ -39,6 +39,7 @@ func NewVideoFacade() *VideoFacade {
 func (impl *VideoFacade) SearchVideo(c *web.Controller) []videoVO.VideoItemVO {
 	// 上下文
 	ctx := impl.GetContext(c)
+	// 关键词
 	keyword := c.GetString("keyword", "")
 	// 演员
 	actors := impl.GetStringAsInt64List(c, "actors")
