@@ -1,10 +1,10 @@
 package db
 
 import (
+	"github.com/Mellolo/media-station/models/dao/actorDAO"
+	"github.com/Mellolo/media-station/models/dao/daoCommon"
+	"github.com/Mellolo/media-station/models/do/actorDO"
 	"github.com/beego/beego/v2/client/orm"
-	"media-station/models/dao/actorDAO"
-	"media-station/models/dao/daoCommon"
-	"media-station/models/do/actorDO"
 )
 
 type ActorMapper interface {

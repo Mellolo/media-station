@@ -3,14 +3,14 @@ package bizActor
 import (
 	"fmt"
 	"github.com/Mellolo/common/errors"
+	"github.com/Mellolo/media-station/generator"
+	"github.com/Mellolo/media-station/models/do/actorDO"
+	"github.com/Mellolo/media-station/models/dto/actorDTO"
+	"github.com/Mellolo/media-station/models/dto/contextDTO"
+	"github.com/Mellolo/media-station/models/dto/fileDTO"
+	"github.com/Mellolo/media-station/storage/db"
+	"github.com/Mellolo/media-station/storage/oss"
 	"github.com/beego/beego/v2/client/orm"
-	"media-station/generator"
-	"media-station/models/do/actorDO"
-	"media-station/models/dto/actorDTO"
-	"media-station/models/dto/contextDTO"
-	"media-station/models/dto/fileDTO"
-	"media-station/storage/db"
-	"media-station/storage/oss"
 )
 
 const (

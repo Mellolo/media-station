@@ -7,7 +7,7 @@ import (
 
 func init() {
 
-	beego.GlobalControllerRouter["media-station/controllers:ActorAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:ActorAuthController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:ActorAuthController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:ActorAuthController"],
 		beego.ControllerComments{
 			Method:           "Create",
 			Router:           `create`,
@@ -16,7 +16,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:ActorAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:ActorAuthController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:ActorAuthController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:ActorAuthController"],
 		beego.ControllerComments{
 			Method:           "Delete",
 			Router:           `delete/:id`,
@@ -25,7 +25,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:ActorAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:ActorAuthController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:ActorAuthController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:ActorAuthController"],
 		beego.ControllerComments{
 			Method:           "Update",
 			Router:           `update`,
@@ -34,7 +34,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:ActorController"] = append(beego.GlobalControllerRouter["media-station/controllers:ActorController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:ActorController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:ActorController"],
 		beego.ControllerComments{
 			Method:           "Cover",
 			Router:           `cover/:id`,
@@ -43,7 +43,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:ActorController"] = append(beego.GlobalControllerRouter["media-station/controllers:ActorController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:ActorController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:ActorController"],
 		beego.ControllerComments{
 			Method:           "Page",
 			Router:           `page/:id`,
@@ -52,7 +52,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:ActorController"] = append(beego.GlobalControllerRouter["media-station/controllers:ActorController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:ActorController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:ActorController"],
 		beego.ControllerComments{
 			Method:           "SearchActor",
 			Router:           `search`,
@@ -61,7 +61,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryAuthController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryAuthController"],
 		beego.ControllerComments{
 			Method:           "Delete",
 			Router:           `delete/:id`,
@@ -70,7 +70,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryAuthController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryAuthController"],
 		beego.ControllerComments{
 			Method:           "Update",
 			Router:           `update`,
@@ -79,7 +79,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryAuthController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryAuthController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryAuthController"],
 		beego.ControllerComments{
 			Method:           "Upload",
 			Router:           `upload`,
@@ -88,7 +88,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryController"],
 		beego.ControllerComments{
 			Method:           "Cover",
 			Router:           `cover/:id/`,
@@ -97,7 +97,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryController"],
 		beego.ControllerComments{
 			Method:           "Page",
 			Router:           `page/:id`,
@@ -106,7 +106,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryController"],
 		beego.ControllerComments{
 			Method:           "Picture",
 			Router:           `pic/:id/:page`,
@@ -115,7 +115,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryController"],
 		beego.ControllerComments{
 			Method:           "RecommendGallery",
 			Router:           `recommend`,
@@ -124,7 +124,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryController"],
 		beego.ControllerComments{
 			Method:           "SearchGallery",
 			Router:           `search`,
@@ -133,7 +133,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["media-station/controllers:GalleryController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:GalleryController"],
 		beego.ControllerComments{
 			Method:           "SearchGalleryByTag",
 			Router:           `search/tag`,
@@ -142,7 +142,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:UserAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:UserAuthController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:UserAuthController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:UserAuthController"],
 		beego.ControllerComments{
 			Method:           "Logout",
 			Router:           `logout`,
@@ -151,7 +151,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:UserAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:UserAuthController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:UserAuthController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:UserAuthController"],
 		beego.ControllerComments{
 			Method:           "Profile",
 			Router:           `profile`,
@@ -160,7 +160,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:UserController"] = append(beego.GlobalControllerRouter["media-station/controllers:UserController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:UserController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:UserController"],
 		beego.ControllerComments{
 			Method:           "Login",
 			Router:           `login`,
@@ -169,7 +169,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:UserController"] = append(beego.GlobalControllerRouter["media-station/controllers:UserController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:UserController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:UserController"],
 		beego.ControllerComments{
 			Method:           "LoginStatus",
 			Router:           `login/status`,
@@ -178,7 +178,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoAuthController"],
 		beego.ControllerComments{
 			Method:           "Delete",
 			Router:           `delete/:id`,
@@ -187,7 +187,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoAuthController"],
 		beego.ControllerComments{
 			Method:           "Update",
 			Router:           `update`,
@@ -196,7 +196,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoAuthController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoAuthController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoAuthController"],
 		beego.ControllerComments{
 			Method:           "Upload",
 			Router:           `upload`,
@@ -205,7 +205,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"],
 		beego.ControllerComments{
 			Method:           "Cover",
 			Router:           `cover/:id`,
@@ -214,7 +214,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"],
 		beego.ControllerComments{
 			Method:           "Page",
 			Router:           `page/:id`,
@@ -223,7 +223,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"],
 		beego.ControllerComments{
 			Method:           "Play",
 			Router:           `play/:id`,
@@ -232,7 +232,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"],
 		beego.ControllerComments{
 			Method:           "RecommendVideo",
 			Router:           `recommend`,
@@ -241,7 +241,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"],
 		beego.ControllerComments{
 			Method:           "SearchVideo",
 			Router:           `search`,
@@ -250,7 +250,7 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["media-station/controllers:VideoController"],
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"],
 		beego.ControllerComments{
 			Method:           "SearchVideoByTag",
 			Router:           `search/tag`,

@@ -3,12 +3,12 @@ package controllers
 import (
 	"fmt"
 	"github.com/Mellolo/common/errors"
+	"github.com/Mellolo/media-station/controllers/templates"
+	"github.com/Mellolo/media-station/facade"
+	"github.com/Mellolo/media-station/util"
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/beego/beego/v2/server/web"
 	"github.com/google/uuid"
-	"media-station/controllers/templates"
-	"media-station/facade"
-	"media-station/util"
 )
 
 type GalleryController struct {

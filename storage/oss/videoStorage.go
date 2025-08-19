@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/Mellolo/common/errors"
 	"github.com/Mellolo/common/oss"
+	"github.com/Mellolo/media-station/models/do/videoDO"
+	"github.com/Mellolo/media-station/util"
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/google/uuid"
 	"io"
-	"media-station/models/do/videoDO"
-	"media-station/util"
 	"time"
 )
 

@@ -1,9 +1,9 @@
 package db
 
 import (
+	"github.com/Mellolo/media-station/models/do/actorDO"
 	"github.com/beego/beego/v2/client/orm"
 	_ "github.com/go-sql-driver/mysql"
-	"media-station/models/do/actorDO"
 	"reflect"
 	"testing"
 )

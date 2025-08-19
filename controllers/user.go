@@ -1,10 +1,10 @@
 package controllers
 
 import (
+	"github.com/Mellolo/media-station/controllers/templates"
+	"github.com/Mellolo/media-station/facade"
+	"github.com/Mellolo/media-station/models/vo/userVO"
 	"github.com/beego/beego/v2/server/web"
-	"media-station/controllers/templates"
-	"media-station/facade"
-	"media-station/models/vo/userVO"
 )
 
 type UserController struct {

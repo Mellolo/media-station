@@ -5,14 +5,14 @@ import (
 	"github.com/Mellolo/common/config"
 	"github.com/Mellolo/common/utils/jsonUtil"
 	"github.com/Mellolo/common/utils/jwtUtil"
+	"github.com/Mellolo/media-station/models/dto/contextDTO"
+	"github.com/Mellolo/media-station/models/dto/userDTO"
+	"github.com/Mellolo/media-station/models/vo/userVO"
+	"github.com/Mellolo/media-station/service/biz/bizUser"
+	"github.com/Mellolo/media-station/storage/db"
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/server/web"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"media-station/models/dto/contextDTO"
-	"media-station/models/dto/userDTO"
-	"media-station/models/vo/userVO"
-	"media-station/service/biz/bizUser"
-	"media-station/storage/db"
 )
 
 type UserFacade struct {

@@ -6,11 +6,11 @@ import (
 	"github.com/Mellolo/common/errors"
 	"github.com/Mellolo/common/utils/jsonUtil"
 	"github.com/Mellolo/common/utils/jwtUtil"
+	"github.com/Mellolo/media-station/models/do/userDO"
+	"github.com/Mellolo/media-station/models/dto/contextDTO"
+	"github.com/Mellolo/media-station/models/dto/userDTO"
+	"github.com/Mellolo/media-station/storage/db"
 	"github.com/beego/beego/v2/client/orm"
-	"media-station/models/do/userDO"
-	"media-station/models/dto/contextDTO"
-	"media-station/models/dto/userDTO"
-	"media-station/storage/db"
 	"time"
 )
 

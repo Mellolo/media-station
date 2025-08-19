@@ -1,9 +1,9 @@
 package db
 
 import (
+	"github.com/Mellolo/media-station/models/dao/userDAO"
+	"github.com/Mellolo/media-station/models/do/userDO"
 	"github.com/beego/beego/v2/client/orm"
-	"media-station/models/dao/userDAO"
-	"media-station/models/do/userDO"
 )
 
 type UserMapper interface {

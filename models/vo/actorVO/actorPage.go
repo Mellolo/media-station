@@ -1,8 +1,8 @@
 package actorVO
 
 import (
-	"media-station/models/vo/galleryVO"
-	"media-station/models/vo/videoVO"
+	"github.com/Mellolo/media-station/models/vo/galleryVO"
+	"github.com/Mellolo/media-station/models/vo/videoVO"
 )
 
 // +k8s:deepcopy-gen=true

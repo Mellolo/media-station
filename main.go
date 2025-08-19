@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/Mellolo/common/errors"
+	"github.com/Mellolo/media-station/initialize"
+	_ "github.com/Mellolo/media-station/routers"
 	"github.com/beego/beego/v2/server/web"
-	"media-station/initialize"
-	_ "media-station/routers"
 )
 
 const (

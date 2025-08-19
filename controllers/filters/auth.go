@@ -5,10 +5,10 @@ import (
 	"github.com/Mellolo/common/config"
 	"github.com/Mellolo/common/utils/jsonUtil"
 	"github.com/Mellolo/common/utils/jwtUtil"
+	"github.com/Mellolo/media-station/controllers/templates"
 	"github.com/beego/beego/v2/server/web"
 	"github.com/beego/beego/v2/server/web/context"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"media-station/controllers/templates"
 )
 
 const (

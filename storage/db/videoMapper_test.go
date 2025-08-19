@@ -1,10 +1,10 @@
 package db
 
 import (
+	"github.com/Mellolo/media-station/enum"
+	"github.com/Mellolo/media-station/models/do/videoDO"
 	"github.com/beego/beego/v2/client/orm"
 	_ "github.com/go-sql-driver/mysql"
-	"media-station/enum"
-	"media-station/models/do/videoDO"
 	"reflect"
 	"testing"
 )

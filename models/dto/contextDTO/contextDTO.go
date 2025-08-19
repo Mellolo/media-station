@@ -1,6 +1,6 @@
 package contextDTO
 
-import "media-station/models/dto/userDTO"
+import "github.com/Mellolo/media-station/models/dto/userDTO"
 
 // +k8s:deepcopy-gen=true
 type ContextDTO struct {

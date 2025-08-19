@@ -1,8 +1,8 @@
 package domainPermission
 
 import (
-	"media-station/enum"
-	"media-station/models/do/userDO"
+	"github.com/Mellolo/media-station/enum"
+	"github.com/Mellolo/media-station/models/do/userDO"
 )
 
 type PermissionDomainService interface {

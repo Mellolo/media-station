@@ -1,4 +1,4 @@
-module media-station
+module github.com/Mellolo/media-station
 
 go 1.24.4
 

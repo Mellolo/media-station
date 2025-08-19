@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/Mellolo/common/errors"
 	"github.com/Mellolo/common/oss"
+	"github.com/Mellolo/media-station/models/do/galleryDO"
 	"io"
-	"media-station/models/do/galleryDO"
 )
 
 type PictureStorage interface {

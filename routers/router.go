@@ -1,9 +1,9 @@
 package routers
 
 import (
+	"github.com/Mellolo/media-station/controllers"
+	"github.com/Mellolo/media-station/controllers/filters"
 	beego "github.com/beego/beego/v2/server/web"
-	"media-station/controllers"
-	"media-station/controllers/filters"
 )
 
 func init() {

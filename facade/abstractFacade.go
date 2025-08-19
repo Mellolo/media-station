@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/Mellolo/common/errors"
 	"github.com/Mellolo/common/utils/jsonUtil"
+	"github.com/Mellolo/media-station/controllers/filters"
+	"github.com/Mellolo/media-station/models/dto/contextDTO"
+	"github.com/Mellolo/media-station/models/dto/userDTO"
 	"github.com/beego/beego/v2/server/web"
 	"io"
-	"media-station/controllers/filters"
-	"media-station/models/dto/contextDTO"
-	"media-station/models/dto/userDTO"
 	"strconv"
 )
 

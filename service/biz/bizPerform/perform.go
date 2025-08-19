@@ -3,12 +3,12 @@ package bizPerform
 import (
 	"fmt"
 	"github.com/Mellolo/common/errors"
+	"github.com/Mellolo/media-station/models/do/performDO"
+	"github.com/Mellolo/media-station/models/dto/contextDTO"
+	"github.com/Mellolo/media-station/models/dto/performDTO"
+	"github.com/Mellolo/media-station/storage/db"
 	"github.com/beego/beego/v2/client/orm"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"media-station/models/do/performDO"
-	"media-station/models/dto/contextDTO"
-	"media-station/models/dto/performDTO"
-	"media-station/storage/db"
 )
 
 type PerformBizService interface {

@@ -2,10 +2,10 @@ package db
 
 import (
 	"github.com/Mellolo/common/utils/jsonUtil"
+	"github.com/Mellolo/media-station/models/dao/daoCommon"
+	"github.com/Mellolo/media-station/models/dao/galleryDAO"
+	"github.com/Mellolo/media-station/models/do/galleryDO"
 	"github.com/beego/beego/v2/client/orm"
-	"media-station/models/dao/daoCommon"
-	"media-station/models/dao/galleryDAO"
-	"media-station/models/do/galleryDO"
 )
 
 type GalleryMapper interface {
