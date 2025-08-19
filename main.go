@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/Mellolo/common/errors"
 	"github.com/beego/beego/v2/server/web"
-	"github.com/mellolo/common/errors"
 	"media-station/initialize"
 	_ "media-station/routers"
 )

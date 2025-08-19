@@ -1,6 +1,6 @@
 package util
 
-import "github.com/mellolo/common/utils/jsonUtil"
+import "github.com/Mellolo/common/utils/jsonUtil"
 
 type processBar struct {
 	percent int

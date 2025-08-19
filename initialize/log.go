@@ -2,9 +2,9 @@ package initialize
 
 import (
 	"encoding/json"
+	"github.com/Mellolo/common/errors"
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/beego/beego/v2/server/web"
-	"github.com/mellolo/common/errors"
 )
 
 func InitLog() {

@@ -2,8 +2,8 @@ package db
 
 import (
 	"context"
+	"github.com/Mellolo/common/errors"
 	"github.com/beego/beego/v2/client/orm"
-	"github.com/mellolo/common/errors"
 )
 
 func DoTransaction(f func(tx orm.TxOrmer)) {

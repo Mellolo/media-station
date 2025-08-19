@@ -2,8 +2,8 @@ package bizActor
 
 import (
 	"fmt"
+	"github.com/Mellolo/common/errors"
 	"github.com/beego/beego/v2/client/orm"
-	"github.com/mellolo/common/errors"
 	"media-station/generator"
 	"media-station/models/do/actorDO"
 	"media-station/models/dto/actorDTO"

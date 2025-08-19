@@ -2,8 +2,8 @@ package oss
 
 import (
 	"fmt"
-	"github.com/mellolo/common/errors"
-	"github.com/mellolo/common/oss"
+	"github.com/Mellolo/common/errors"
+	"github.com/Mellolo/common/oss"
 	"io"
 	"media-station/models/do/galleryDO"
 )

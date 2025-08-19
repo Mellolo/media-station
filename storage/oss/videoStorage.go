@@ -2,10 +2,10 @@ package oss
 
 import (
 	"fmt"
+	"github.com/Mellolo/common/errors"
+	"github.com/Mellolo/common/oss"
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/google/uuid"
-	"github.com/mellolo/common/errors"
-	"github.com/mellolo/common/oss"
 	"io"
 	"media-station/models/do/videoDO"
 	"media-station/util"

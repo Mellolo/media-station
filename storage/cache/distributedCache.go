@@ -1,8 +1,8 @@
 package cache
 
 import (
-	"github.com/mellolo/common/cache"
-	"github.com/mellolo/common/errors"
+	"github.com/Mellolo/common/cache"
+	"github.com/Mellolo/common/errors"
 	"time"
 )
 

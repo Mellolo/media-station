@@ -3,10 +3,10 @@ package bizVideo
 import (
 	"bytes"
 	"fmt"
+	"github.com/Mellolo/common/errors"
+	"github.com/Mellolo/common/utils/videoUtil"
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/core/logs"
-	"github.com/mellolo/common/errors"
-	"github.com/mellolo/common/utils/videoUtil"
 	"io"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"media-station/enum"

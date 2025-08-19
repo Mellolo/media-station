@@ -1,8 +1,8 @@
 package initialize
 
 import (
+	"github.com/Mellolo/common/oss"
 	"github.com/beego/beego/v2/server/web"
-	"github.com/mellolo/common/oss"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )

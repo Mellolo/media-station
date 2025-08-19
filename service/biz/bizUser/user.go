@@ -1,12 +1,12 @@
 package bizUser
 
 import (
+	"github.com/Mellolo/common/cache"
+	"github.com/Mellolo/common/config"
+	"github.com/Mellolo/common/errors"
+	"github.com/Mellolo/common/utils/jsonUtil"
+	"github.com/Mellolo/common/utils/jwtUtil"
 	"github.com/beego/beego/v2/client/orm"
-	"github.com/mellolo/common/cache"
-	"github.com/mellolo/common/config"
-	"github.com/mellolo/common/errors"
-	"github.com/mellolo/common/utils/jsonUtil"
-	"github.com/mellolo/common/utils/jwtUtil"
 	"media-station/models/do/userDO"
 	"media-station/models/dto/contextDTO"
 	"media-station/models/dto/userDTO"

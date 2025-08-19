@@ -1,10 +1,10 @@
 package initialize
 
 import (
+	"github.com/Mellolo/common/errors"
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/server/web"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/mellolo/common/errors"
 )
 
 func InitDB() {

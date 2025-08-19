@@ -1,9 +1,9 @@
 package initialize
 
 import (
+	"github.com/Mellolo/common/cache"
 	"github.com/beego/beego/v2/server/web"
 	"github.com/go-redis/redis/v8"
-	"github.com/mellolo/common/cache"
 )
 
 func InitCache() {

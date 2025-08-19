@@ -2,8 +2,8 @@ package bizGallery
 
 import (
 	"fmt"
+	"github.com/Mellolo/common/errors"
 	"github.com/beego/beego/v2/client/orm"
-	"github.com/mellolo/common/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"media-station/enum"
 	"media-station/generator"
