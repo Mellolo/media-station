@@ -34,10 +34,10 @@ func ServeJsonTemplate(ctx *context.Context, f func() JsonTemplate) {
 				util.FormatErrorLog(uniqueId.String(), panicContext.Err.Error(), panicContext.RecoverStack),
 			))
 		data := ExceptionData{
-			Uuid:     uniqueId.String(),
 			ErrorMsg: panicContext.Err.Error(),
 		}
 		if web.BConfig.RunMode == web.DEV && web.BConfig.EnableErrorsRender {
+			data.Uuid = uniqueId.String()
 			data.Stack = panicContext.RecoverStack
 		}
 		ctx.Input.SetData(KeyExceptionData, data)
@@ -89,10 +89,10 @@ func ServePictureTemplate(ctx *context.Context, f func() PictureTemplate) {
 				util.FormatErrorLog(uniqueId.String(), panicContext.Err.Error(), panicContext.RecoverStack),
 			))
 		data := ExceptionData{
-			Uuid:     uniqueId.String(),
 			ErrorMsg: panicContext.Err.Error(),
 		}
 		if web.BConfig.RunMode == web.DEV && web.BConfig.EnableErrorsRender {
+			data.Uuid = uniqueId.String()
 			data.Stack = panicContext.RecoverStack
 		}
 		ctx.Input.SetData(KeyExceptionData, data)
@@ -113,8 +113,10 @@ func ServePictureTemplate(ctx *context.Context, f func() PictureTemplate) {
 				util.FormatErrorLog(uniqueId.String(), err.Error()),
 			))
 		data := ExceptionData{
-			Uuid:     uniqueId.String(),
 			ErrorMsg: err.Error(),
+		}
+		if web.BConfig.RunMode == web.DEV && web.BConfig.EnableErrorsRender {
+			data.Uuid = uniqueId.String()
 		}
 		ctx.Input.SetData(KeyExceptionData, data)
 		web.Exception(500, ctx)
@@ -141,10 +143,10 @@ func ServeVideoTemplate(ctx *context.Context, f func() VideoTemplate) {
 				util.FormatErrorLog(uniqueId.String(), panicContext.Err.Error(), panicContext.RecoverStack),
 			))
 		data := ExceptionData{
-			Uuid:     uniqueId.String(),
 			ErrorMsg: panicContext.Err.Error(),
 		}
 		if web.BConfig.RunMode == web.DEV && web.BConfig.EnableErrorsRender {
+			data.Uuid = uniqueId.String()
 			data.Stack = panicContext.RecoverStack
 		}
 		ctx.Input.SetData(KeyExceptionData, data)
@@ -172,8 +174,10 @@ func ServeVideoTemplate(ctx *context.Context, f func() VideoTemplate) {
 				util.FormatErrorLog(uniqueId.String(), err.Error()),
 			))
 		data := ExceptionData{
-			Uuid:     uniqueId.String(),
 			ErrorMsg: err.Error(),
+		}
+		if web.BConfig.RunMode == web.DEV && web.BConfig.EnableErrorsRender {
+			data.Uuid = uniqueId.String()
 		}
 		ctx.Input.SetData(KeyExceptionData, data)
 		web.Exception(500, ctx)
