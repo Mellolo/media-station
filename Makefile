@@ -1,4 +1,4 @@
-.PHONY: mockgen
+.PHONY: mockgen docker docker-run clean-deepcopy re-generate-deepcopy
 
 all:
 
@@ -41,3 +41,24 @@ re-generate-deepcopy:
 	@# 重新生成的deepcopy
 	make clean-deepcopy
 	make generate-deepcopy
+
+# Docker 相关命令
+docker:
+	@echo "Building Docker image..."
+	./build-docker.sh
+
+docker-run:
+	@echo "Running Docker container..."
+	docker run -d -p 8080:8080 --name media-station media-station:latest
+
+docker-stop:
+	@echo "Stopping Docker container..."
+	docker stop media-station || true
+
+docker-rm:
+	@echo "Removing Docker container..."
+	docker rm -f media-station || true
+
+docker-clean: docker-stop docker-rm
+	@echo "Cleaning Docker resources..."
+	docker rmi media-station:latest || true
