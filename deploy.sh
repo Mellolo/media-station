@@ -22,11 +22,11 @@ docker rm ${PROJECT_NAME} || true
 # 启动新容器
 echo "3. 启动新容器..."
 docker run -d \
-  -p 8080:8080 \
+  -p 18080:8080 \
   --name ${PROJECT_NAME} \
   --restart=always \
   ${IMAGE_NAME}
 
 echo "部署完成！"
-echo "访问地址: http://localhost:8080"
+echo "访问地址: http://localhost:18080"
 echo "查看日志: docker logs -f ${PROJECT_NAME}"

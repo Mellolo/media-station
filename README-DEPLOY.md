@@ -28,7 +28,7 @@ make deploy
 
 ## 部署完成后
 
-- 访问地址: `http://192.168.5.178:8080`
+- 访问地址: `http://192.168.5.178:18080`
 - 查看日志: `docker logs -f media-station`
 - 重启服务: `docker restart media-station`
 - 停止服务: `docker stop media-station`
