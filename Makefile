@@ -51,16 +51,5 @@ build-push:
 
 # 部署到NAS：上传脚本并提示执行（镜像已存在）
 deploy:
-	@echo "上传部署脚本到NAS..."
-	scp deploy-on-nas.sh mellolo@192.168.5.178:~/deploy-on-nas.sh
-	@echo ""
-	@echo "======================================"
-	@echo "部署脚本已上传"
-	@echo "======================================"
-	@echo ""
-	@echo "请在NAS上执行部署："
-	@echo "  ssh mellolo@192.168.5.178"
-	@echo "  sudo ./deploy-on-nas.sh"
-	@echo ""
-	@echo "完成后访问: http://192.168.5.178:18080"
-	@echo ""
+	chmod +x deploy-to-nas.sh
+	./deploy-to-nas.sh
