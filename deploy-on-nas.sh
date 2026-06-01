@@ -21,20 +21,20 @@ echo ""
 
 # 拉取镜像
 echo "拉取镜像..."
-docker pull ${IMAGE_NAME}
+sudo docker pull ${IMAGE_NAME}
 echo "✓ 拉取完成"
 echo ""
 
 # 停止并删除旧容器
 echo "停止旧容器..."
-docker stop ${PROJECT_NAME} || true
-docker rm ${PROJECT_NAME} || true
+sudo docker stop ${PROJECT_NAME} || true
+sudo docker rm ${PROJECT_NAME} || true
 echo "✓ 清理完成"
 echo ""
 
 # 启动新容器
 echo "启动新容器..."
-docker run -d \
+sudo docker run -d \
   -p ${APP_PORT}:8080 \
   --name ${PROJECT_NAME} \
   --restart=always \
@@ -44,7 +44,7 @@ echo ""
 
 # 验证部署
 echo "验证部署..."
-docker ps | grep ${PROJECT_NAME}
+sudo docker ps | grep ${PROJECT_NAME}
 echo ""
 
 echo "======================================"
