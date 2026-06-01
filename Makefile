@@ -1,4 +1,4 @@
-.PHONY: mockgen docker docker-run clean-deepcopy re-generate-deepcopy
+.PHONY: mockgen clean-deepcopy re-generate-deepcopy build-push upload-deploy-script
 
 all:
 
