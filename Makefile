@@ -1,4 +1,4 @@
-.PHONY: mockgen clean-deepcopy re-generate-deepcopy build-push upload-deploy-script
+.PHONY: mockgen clean-deepcopy re-generate-deepcopy build-push upload-deploy-script config-nas-docker
 
 all:
 
@@ -43,7 +43,18 @@ re-generate-deepcopy:
 	make generate-deepcopy
 
 # Docker Registry 部署（Registry已安装）
-# 构建并推送镜像到Registry
+# 步骤0: 配置NAS Docker客户端（首次必须）
+config-nas-docker:
+	@echo "上传配置脚本到NAS..."
+	chmod +x config-nas-docker.sh
+	scp config-nas-docker.sh mellolo@192.168.5.178:~/config-nas-docker.sh
+	@echo ""
+	@echo "请在NAS上执行："
+	@echo "  ssh mellolo@192.168.5.178"
+	@echo "  sudo ./config-nas-docker.sh"
+	@echo ""
+
+# 步骤1: 构建并推送镜像到Registry
 build-push:
 	@echo "构建并推送镜像..."
 	chmod +x build-and-push.sh
