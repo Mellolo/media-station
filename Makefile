@@ -49,17 +49,13 @@ build-push:
 	chmod +x build-and-push.sh
 	./build-and-push.sh
 
-# 一键部署：构建推送 + 上传部署脚本
+# 部署到NAS：上传脚本并提示执行（镜像已存在）
 deploy:
-	@echo "构建并推送镜像..."
-	chmod +x build-and-push.sh
-	./build-and-push.sh
-	@echo ""
 	@echo "上传部署脚本到NAS..."
 	scp deploy-on-nas.sh mellolo@192.168.5.178:~/deploy-on-nas.sh
 	@echo ""
 	@echo "======================================"
-	@echo "镜像已推送，脚本已上传"
+	@echo "部署脚本已上传"
 	@echo "======================================"
 	@echo ""
 	@echo "请在NAS上执行部署："
