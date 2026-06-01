@@ -62,3 +62,9 @@ docker-rm:
 docker-clean: docker-stop docker-rm
 	@echo "Cleaning Docker resources..."
 	docker rmi media-station:latest || true
+
+# 一键部署命令
+deploy:
+	@echo "一键部署..."
+	chmod +x deploy.sh
+	./deploy.sh
