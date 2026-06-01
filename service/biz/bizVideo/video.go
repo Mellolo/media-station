@@ -2,7 +2,16 @@ package bizVideo
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/Mellolo/common/errors"
 	"github.com/Mellolo/common/utils/videoUtil"
 	"github.com/Mellolo/media-station/enum"
@@ -18,11 +27,7 @@ import (
 	"github.com/Mellolo/media-station/storage/oss"
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/core/logs"
-	"io"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -41,6 +46,10 @@ type VideoBizService interface {
 	UpdateVideo(ctx contextDTO.ContextDTO, updateDTO videoDTO.VideoUpdateDTO, tx ...orm.TxOrmer) videoDTO.VideoDTO
 	DeleteVideo(ctx contextDTO.ContextDTO, id int64, tx ...orm.TxOrmer) videoDTO.VideoDTO
 	PlayVideo(ctx contextDTO.ContextDTO, id int64, rangeHeader ...string) videoDTO.VideoFileDTO
+
+	// 流式转码相关方法
+	StreamVideoToHLS(ctx contextDTO.ContextDTO, id int64) map[string]string
+	ServeHLSSegment(sessionID string, filename string) (string, error)
 
 	RemoveVideoCover(ctx contextDTO.ContextDTO, path string)
 	RemoveVideoFile(ctx contextDTO.ContextDTO, path string)
@@ -177,34 +186,83 @@ func (impl *VideoBizServiceImpl) CreateVideo(ctx contextDTO.ContextDTO, createDT
 		video.PermissionLevel = enum.PermissionPublic
 	}
 
-	// 上传视频
+	// 1. 保存上传文件到临时位置用于格式检测
+	tempFile, err := ioutil.TempFile("", "upload_*")
+	if err != nil {
+		panic(errors.WrapError(err, "create temp file failed"))
+	}
+	tempPath := tempFile.Name()
+
+	// 将上传文件内容复制到临时文件
+	_, err = io.Copy(tempFile, videoDTO.File)
+	if err != nil {
+		tempFile.Close()
+		os.Remove(tempPath)
+		panic(errors.WrapError(err, "save upload file to temp failed"))
+	}
+	tempFile.Close()
+
+	// 2. 使用 ffprobe 检测真实格式
+	formatInfo, err := detectVideoFormat(tempPath)
+	if err != nil {
+		logs.Warn(fmt.Sprintf("格式检测失败: %v, 使用默认扩展名 mp4", err))
+		formatInfo = map[string]interface{}{"format_name": "mp4"}
+	}
+
+	// 3. 确定文件扩展名
+	originalExt := GetExtensionFromFormat(formatInfo["format_name"].(string))
+
+	// 4. 生成唯一文件名并保存到 MinIO（保留原始扩展名）
 	filename := impl.idGenerator.GenerateId(videoIdGenerateKey)
-	path := fmt.Sprintf("videos/%s.mp4", filename)
-	impl.videoStorage.Upload(bucketVideo, path, videoDTO.File, videoDTO.Size)
+	path := fmt.Sprintf("videos/%s.%s", filename, originalExt)
+
+	// 重新打开临时文件用于上传
+	fileReader, err := os.Open(tempPath)
+	if err != nil {
+		os.Remove(tempPath)
+		panic(errors.WrapError(err, "open temp file failed"))
+	}
+	fileInfo, err := os.Stat(tempPath)
+	if err != nil {
+		fileReader.Close()
+		os.Remove(tempPath)
+		panic(errors.WrapError(err, "get temp file info failed"))
+	}
+
+	impl.videoStorage.Upload(bucketVideo, path, fileReader, fileInfo.Size())
+	fileReader.Close()
 	video.VideoUrl = path
 
-	// 上传封面
+	// 5. 生成封面和获取时长
 	url := impl.videoStorage.GetStreamURL(bucketVideo, path, 3*time.Minute)
 	filename = impl.idGenerator.GenerateId(videoCoverIdGenerateKey)
 	path = fmt.Sprintf("covers/%s.jpg", filename)
 	data, err := videoUtil.CaptureScreenshotFromStreamURL(url)
 	if err != nil {
+		os.Remove(tempPath)
 		panic(errors.WrapError(err, "capture video thumbnail failed"))
 	}
 	impl.pictureStorage.Upload(bucketVideo, path, io.NopCloser(bytes.NewReader(data)), int64(len(data)))
 	video.CoverUrl = path
 
-	// 时长
+	// 6. 获取时长
 	seconds, err := videoUtil.GetVideoDuration(impl.videoStorage.GetStreamURL(bucketVideo, video.VideoUrl, time.Minute))
 	if err != nil {
+		os.Remove(tempPath)
 		panic(errors.WrapError(err, "get video duration failed"))
 	}
 	video.Duration = seconds
 
+	// 7. 保存到数据库
 	id, err := impl.videoMapper.Insert(video, tx...)
 	if err != nil {
+		os.Remove(tempPath)
 		panic(errors.WrapError(err, "create video failed"))
 	}
+
+	// 8. 清理临时文件
+	os.Remove(tempPath)
+
 	return id
 }
 
@@ -296,4 +354,25 @@ func (impl *VideoBizServiceImpl) convertVideoDO2VideoDTO(do videoDO.VideoDO) vid
 		Duration:        do.Duration,
 		PermissionLevel: do.PermissionLevel,
 	}
+}
+
+// detectVideoFormat 使用 ffprobe 检测视频格式
+func detectVideoFormat(filePath string) (map[string]interface{}, error) {
+	cmd := exec.Command("ffprobe",
+		"-v", "quiet",
+		"-print_format", "json",
+		"-show_format",
+		filePath)
+
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("ffprobe执行失败: %v", err)
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(output, &result); err != nil {
+		return nil, fmt.Errorf("解析JSON失败: %v", err)
+	}
+
+	return result, nil
 }

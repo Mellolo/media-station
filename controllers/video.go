@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"fmt"
+
 	"github.com/Mellolo/common/errors"
 	"github.com/Mellolo/media-station/controllers/templates"
 	"github.com/Mellolo/media-station/facade"
+	"github.com/Mellolo/media-station/service/biz/bizVideo"
 	"github.com/Mellolo/media-station/util"
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/beego/beego/v2/server/web"
@@ -70,6 +72,31 @@ func (c *VideoController) Play() {
 			Header: vo.Header,
 		}
 	})
+}
+
+// @router stream/:id [get]
+func (c *VideoController) StreamVideo() {
+	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
+		result := facade.NewVideoFacade().StreamVideo(&c.Controller)
+		return templates.NewJsonTemplate200(result)
+	})
+}
+
+// @router hls/:session/* [get]
+func (c *VideoController) ServeHLSSegment() {
+	sessionID := c.Ctx.Input.Param(":session")
+	filename := c.Ctx.Input.Param(":path")
+
+	filePath, err := facade.NewVideoFacade().GetHLSSegment(sessionID, filename)
+	if err != nil {
+		// 文件未就绪，返回 404
+		c.Ctx.ResponseWriter.WriteHeader(404)
+		c.Ctx.Output.JSON(map[string]string{"error": "Segment not ready"}, false, false)
+		return
+	}
+
+	// 提供静态文件服务
+	bizVideo.ServeHLSFile(filePath, c.Ctx.ResponseWriter, c.Ctx.Request)
 }
 
 type VideoAuthController struct {

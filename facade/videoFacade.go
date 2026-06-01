@@ -321,3 +321,13 @@ func (impl *VideoFacade) PlayVideo(c *web.Controller) videoVO.VideoFileVO {
 		Reader: dto.Reader,
 	}
 }
+
+func (impl *VideoFacade) StreamVideo(c *web.Controller) map[string]string {
+	ctx := impl.GetContext(c)
+	id := impl.GetRestfulParamInt64(c, ":id")
+	return impl.videoBizService.StreamVideoToHLS(ctx, id)
+}
+
+func (impl *VideoFacade) GetHLSSegment(sessionID, filename string) (string, error) {
+	return impl.videoBizService.ServeHLSSegment(sessionID, filename)
+}
