@@ -68,3 +68,9 @@ deploy:
 	@echo "一键部署..."
 	chmod +x deploy.sh
 	./deploy.sh
+
+# 一键部署到NAS
+deploy-nas:
+	@echo "一键部署到NAS..."
+	chmod +x deploy-to-nas.sh
+	./deploy-to-nas.sh
