@@ -10,6 +10,7 @@ NAS_USER="mellolo"
 PROJECT_NAME="media-station"
 IMAGE_NAME="media-station:latest"
 IMAGE_FILE="media-station-image.tar"
+NAS_TMP_DIR="/tmp/media-station-deploy"
 
 echo "=== 开始一键部署到NAS ==="
 
@@ -21,15 +22,16 @@ docker build -t ${IMAGE_NAME} .
 echo "2. 导出镜像为tar文件..."
 docker save -o ${IMAGE_FILE} ${IMAGE_NAME}
 
-# 3. 上传镜像到NAS
-echo "3. 上传镜像到NAS..."
-scp ${IMAGE_FILE} ${NAS_USER}@${NAS_HOST}:~/
+# 3. 创建NAS临时目录并上传镜像
+echo "3. 创建NAS临时目录并上传镜像..."
+ssh ${NAS_USER}@${NAS_HOST} "mkdir -p ${NAS_TMP_DIR}"
+scp ${IMAGE_FILE} ${NAS_USER}@${NAS_HOST}:${NAS_TMP_DIR}/
 
 # 4. 在NAS上导入并运行镜像
 echo "4. 在NAS上导入并运行镜像..."
 ssh ${NAS_USER}@${NAS_HOST} << 'ENDSSH'
 # 导入镜像
-docker load -i ~/media-station-image.tar
+docker load -i /tmp/media-station-deploy/media-station-image.tar
 
 # 停止并删除旧容器
 docker stop media-station || true
@@ -43,7 +45,7 @@ docker run -d \
   media-station:latest
 
 # 清理临时文件
-rm ~/media-station-image.tar
+rm -rf /tmp/media-station-deploy
 
 echo "NAS部署完成！"
 ENDSSH
