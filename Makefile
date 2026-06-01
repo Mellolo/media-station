@@ -42,35 +42,14 @@ re-generate-deepcopy:
 	make clean-deepcopy
 	make generate-deepcopy
 
-# Docker 相关命令
-docker:
-	@echo "Building Docker image..."
-	./build-docker.sh
+# Docker Registry 部署（Registry已安装）
+# 构建并推送镜像到Registry
+build-push:
+	@echo "构建并推送镜像..."
+	chmod +x build-and-push.sh
+	./build-and-push.sh
 
-docker-run:
-	@echo "Running Docker container..."
-	docker run -d -p 8080:8080 --name media-station media-station:latest
-
-docker-stop:
-	@echo "Stopping Docker container..."
-	docker stop media-station || true
-
-docker-rm:
-	@echo "Removing Docker container..."
-	docker rm -f media-station || true
-
-docker-clean: docker-stop docker-rm
-	@echo "Cleaning Docker resources..."
-	docker rmi media-station:latest || true
-
-# 一键部署命令
-deploy:
-	@echo "一键部署..."
-	chmod +x deploy.sh
-	./deploy.sh
-
-# 一键部署到NAS
-deploy-nas:
-	@echo "一键部署到NAS..."
-	chmod +x deploy-to-nas.sh
-	./deploy-to-nas.sh
+# 上传部署脚本到NAS
+upload-deploy-script:
+	@echo "上传部署脚本到NAS..."
+	scp deploy-on-nas.sh mellolo@192.168.5.178:~/deploy-on-nas.sh
