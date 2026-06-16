@@ -1,6 +1,10 @@
 # 构建阶段
 FROM golang:latest AS builder
 
+# 设置Go代理（可通过--build-arg传入）
+ARG GOPROXY=https://goproxy.cn,direct
+ENV GOPROXY=$GOPROXY
+
 # 设置工作目录
 WORKDIR /app
 
