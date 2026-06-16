@@ -23,7 +23,7 @@ build:
 	@echo "===================================="
 	@echo "🔨 构建Docker镜像"
 	@echo "===================================="
-	docker build -t $(IMAGE_NAME):$(TAG) .
+	docker build --build-arg GOPROXY=https://goproxy.cn,direct -t $(IMAGE_NAME):$(TAG) .
 	@echo "✅ 构建完成"
 	@echo ""
 
