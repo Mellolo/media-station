@@ -259,4 +259,22 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"],
+		beego.ControllerComments{
+			Method:           "StreamVideo",
+			Router:           `stream/:id`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"] = append(beego.GlobalControllerRouter["github.com/Mellolo/media-station/controllers:VideoController"],
+		beego.ControllerComments{
+			Method:           "ServeHLSSegment",
+			Router:           `hls/:session/*`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
 }
