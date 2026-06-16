@@ -1,60 +1,68 @@
-# Media Station - 部署到NAS
-# 使用方法: make deploy
+# Media Station - 本地Docker
+# 使用方法: make build / make deploy
 
-.PHONY: help deploy build push clean
+.PHONY: help build deploy clean stop logs
 
 # 配置
-NAS_HOST=192.168.5.178
-NAS_USER=mellolo
-REGISTRY_PORT=5000
+IMAGE_NAME=media-station
+TAG=latest
+CONTAINER_NAME=media-station
 APP_PORT=18080
-PROJECT_NAME=media-station
 
 # 帮助信息
 help:
 	@echo "用法:"
-	@echo "  make deploy  - 一键部署到NAS"
 	@echo "  make build   - 构建Docker镜像"
-	@echo "  make push    - 推送镜像到NAS Registry"
-	@echo "  make clean   - 清理本地构建缓存"
-
-# 一键部署
-deploy: build push
-	@echo ""
-	@echo "===================================="
-	@echo "📦 部署到NAS"
-	@echo "===================================="
-	@ssh $(NAS_USER)@$(NAS_HOST) "\
-		sudo docker pull $(NAS_HOST):$(REGISTRY_PORT)/$(PROJECT_NAME):latest && \
-		sudo docker stop $(PROJECT_NAME) 2>/dev/null || true && \
-		sudo docker rm $(PROJECT_NAME) 2>/dev/null || true && \
-		sudo docker run -d -p $(APP_PORT):8080 --name $(PROJECT_NAME) --restart=always $(NAS_HOST):$(REGISTRY_PORT)/$(PROJECT_NAME):latest && \
-		echo '' && \
-		echo '✅ 部署成功！' && \
-		echo '访问: http://$(NAS_HOST):$(APP_PORT)' \
-	"
-	@echo ""
+	@echo "  make deploy  - 部署到本地Docker（停止旧容器+启动新容器）"
+	@echo "  make stop    - 停止容器"
+	@echo "  make logs    - 查看容器日志"
+	@echo "  make clean   - 清理容器和镜像"
 
 # 构建镜像
 build:
 	@echo "===================================="
 	@echo "🔨 构建Docker镜像"
 	@echo "===================================="
-	docker build -t $(NAS_HOST):$(REGISTRY_PORT)/$(PROJECT_NAME):latest .
+	docker build -t $(IMAGE_NAME):$(TAG) .
 	@echo "✅ 构建完成"
 	@echo ""
 
-# 推送镜像
-push:
+# 部署到本地Docker
+deploy: build
 	@echo "===================================="
-	@echo "📤 推送镜像到NAS"
+	@echo "📦 部署到本地Docker"
 	@echo "===================================="
-	docker push $(NAS_HOST):$(REGISTRY_PORT)/$(PROJECT_NAME):latest
-	@echo "✅ 推送完成"
+	@echo "停止旧容器..."
+	-docker stop $(CONTAINER_NAME) 2>/dev/null || true
+	-docker rm $(CONTAINER_NAME) 2>/dev/null || true
+	@echo "启动新容器..."
+	docker run -d \
+		-p $(APP_PORT):8080 \
+		--name $(CONTAINER_NAME) \
+		--restart=always \
+		$(IMAGE_NAME):$(TAG)
+	@echo ""
+	@echo "===================================="
+	@echo "✅ 部署成功！"
+	@echo "===================================="
+	@echo "访问: http://localhost:$(APP_PORT)"
 	@echo ""
 
-# 清理本地构建缓存
+# 停止容器
+stop:
+	@echo "停止容器..."
+	-docker stop $(CONTAINER_NAME) 2>/dev/null || true
+	-docker rm $(CONTAINER_NAME) 2>/dev/null || true
+	@echo "✅ 已停止"
+
+# 查看日志
+logs:
+	docker logs -f $(CONTAINER_NAME)
+
+# 清理容器和镜像
 clean:
-	@echo "清理本地Docker构建缓存..."
-	docker system prune -f
+	@echo "清理容器和镜像..."
+	-docker stop $(CONTAINER_NAME) 2>/dev/null || true
+	-docker rm $(CONTAINER_NAME) 2>/dev/null || true
+	-docker rmi $(IMAGE_NAME):$(TAG) 2>/dev/null || true
 	@echo "✅ 清理完成"

@@ -1,16 +1,23 @@
 # Media Station
 
-## 快速部署
+## 本地Docker部署
 
 ```bash
-# 一键部署到NAS
+# 构建并部署到本地Docker
 make deploy
 
 # 或分步执行
-make build   # 构建镜像
-make push    # 推送镜像
+make build   # 只构建镜像
+```
+
+## 其他命令
+
+```bash
+make stop    # 停止容器
+make logs    # 查看日志
+make clean   # 清理容器和镜像
 ```
 
 ## 访问地址
 
-http://192.168.5.178:18080
+http://localhost:18080
