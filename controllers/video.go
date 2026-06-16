@@ -3,7 +3,11 @@ package controllers
 import (
 	"fmt"
 
+	"github.com/Mellolo/common/cache"
+	"github.com/Mellolo/common/config"
 	"github.com/Mellolo/common/errors"
+	"github.com/Mellolo/common/utils/jsonUtil"
+	"github.com/Mellolo/common/utils/jwtUtil"
 	"github.com/Mellolo/media-station/controllers/templates"
 	"github.com/Mellolo/media-station/facade"
 	"github.com/Mellolo/media-station/service/biz/bizVideo"
@@ -11,10 +15,39 @@ import (
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/beego/beego/v2/server/web"
 	"github.com/google/uuid"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type VideoController struct {
 	web.Controller
+}
+
+// validateTokenFromURL 从 URL 参数中验证 token
+func (c *VideoController) validateTokenFromURL() error {
+	tokenStr := c.GetString("token", "")
+	if tokenStr == "" {
+		return errors.NewError("require login")
+	}
+
+	// 检查黑名单
+	client, _ := cache.GetCache()
+	data, _ := client.Get("userTokenBacklist")
+	if blacklistStr, ok := data.(string); ok {
+		var blacklist []string
+		jsonUtil.UnmarshalJsonString(blacklistStr, &blacklist)
+		if sets.NewString(blacklist...).Has(tokenStr) {
+			return errors.NewError("invalid login")
+		}
+	}
+
+	// 验证 JWT token
+	secretKey := config.GetConfig("media", "secretKey", "user")
+	_, err := jwtUtil.ParseToken(tokenStr, secretKey)
+	if err != nil {
+		return errors.NewError("invalid login")
+	}
+
+	return nil
 }
 
 // @router search [get]
@@ -77,6 +110,11 @@ func (c *VideoController) Play() {
 // @router stream/:id [get]
 func (c *VideoController) StreamVideo() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
+		// 验证 token
+		if err := c.validateTokenFromURL(); err != nil {
+			return templates.NewJsonTemplate401(err.Error())
+		}
+
 		result := facade.NewVideoFacade().StreamVideo(&c.Controller)
 		return templates.NewJsonTemplate200(result)
 	})
@@ -84,6 +122,13 @@ func (c *VideoController) StreamVideo() {
 
 // @router hls/:session/* [get]
 func (c *VideoController) ServeHLSSegment() {
+	// 验证 token
+	if err := c.validateTokenFromURL(); err != nil {
+		c.Ctx.ResponseWriter.WriteHeader(401)
+		c.Ctx.Output.JSON(map[string]string{"error": err.Error()}, false, false)
+		return
+	}
+
 	sessionID := c.Ctx.Input.Param(":session")
 	filename := c.Ctx.Input.Param(":path")
 
