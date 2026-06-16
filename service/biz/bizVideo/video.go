@@ -308,6 +308,31 @@ func (impl *VideoBizServiceImpl) PlayVideo(ctx contextDTO.ContextDTO, id int64, 
 		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
 	}
 	do := impl.videoStorage.Download(bucketVideo, video.VideoUrl, rangeHeader...)
+
+	// MinIO 可能返回 application/octet-stream，根据文件扩展名设置正确的 Content-Type
+	contentType := do.Header.Get("Content-Type")
+	if contentType == "" || contentType == "application/octet-stream" {
+		lowerUrl := strings.ToLower(video.VideoUrl)
+		switch {
+		case strings.HasSuffix(lowerUrl, ".mp4") || strings.HasSuffix(lowerUrl, ".m4v"):
+			do.Header.Set("Content-Type", "video/mp4")
+		case strings.HasSuffix(lowerUrl, ".webm"):
+			do.Header.Set("Content-Type", "video/webm")
+		case strings.HasSuffix(lowerUrl, ".mkv"):
+			do.Header.Set("Content-Type", "video/x-matroska")
+		case strings.HasSuffix(lowerUrl, ".avi"):
+			do.Header.Set("Content-Type", "video/x-msvideo")
+		case strings.HasSuffix(lowerUrl, ".mov"):
+			do.Header.Set("Content-Type", "video/quicktime")
+		case strings.HasSuffix(lowerUrl, ".flv"):
+			do.Header.Set("Content-Type", "video/x-flv")
+		case strings.HasSuffix(lowerUrl, ".wmv"):
+			do.Header.Set("Content-Type", "video/x-ms-wmv")
+		case strings.HasSuffix(lowerUrl, ".ts"):
+			do.Header.Set("Content-Type", "video/mp2t")
+		}
+	}
+
 	return videoDTO.VideoFileDTO{
 		Header: do.Header,
 		Reader: do.Reader,
