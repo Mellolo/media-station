@@ -22,9 +22,13 @@ type VideoController struct {
 	web.Controller
 }
 
-// validateTokenFromURL 从 URL 参数中验证 token
+// validateTokenFromURL 从 URL 参数或 Authorization header 中验证 token
 func (c *VideoController) validateTokenFromURL() error {
 	tokenStr := c.GetString("token", "")
+	if tokenStr == "" {
+		// 尝试从 Authorization header 获取 token
+		tokenStr = c.Ctx.Request.Header.Get("Authorization")
+	}
 	if tokenStr == "" {
 		return errors.NewError("require login")
 	}
@@ -110,11 +114,6 @@ func (c *VideoController) Play() {
 // @router stream/:id [get]
 func (c *VideoController) StreamVideo() {
 	templates.ServeJsonTemplate(c.Ctx, func() templates.JsonTemplate {
-		// 验证 token
-		if err := c.validateTokenFromURL(); err != nil {
-			return templates.NewJsonTemplate401(err.Error())
-		}
-
 		result := facade.NewVideoFacade().StreamVideo(&c.Controller)
 		return templates.NewJsonTemplate200(result)
 	})
