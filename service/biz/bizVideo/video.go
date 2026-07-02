@@ -210,7 +210,11 @@ func (impl *VideoBizServiceImpl) CreateVideo(ctx contextDTO.ContextDTO, createDT
 	}
 
 	// 3. 确定文件扩展名
-	originalExt := GetExtensionFromFormat(formatInfo["format_name"].(string))
+	var formatName string
+	if fn, ok := formatInfo["format_name"].(string); ok {
+		formatName = fn
+	}
+	originalExt := GetExtensionFromFormat(formatName)
 
 	// 4. 生成唯一文件名并保存到 MinIO（保留原始扩展名）
 	filename := impl.idGenerator.GenerateId(videoIdGenerateKey)
@@ -397,6 +401,11 @@ func detectVideoFormat(filePath string) (map[string]interface{}, error) {
 	var result map[string]interface{}
 	if err := json.Unmarshal(output, &result); err != nil {
 		return nil, fmt.Errorf("解析JSON失败: %v", err)
+	}
+
+	// 返回 format 子对象，而不是根级 JSON
+	if format, ok := result["format"].(map[string]interface{}); ok {
+		return format, nil
 	}
 
 	return result, nil
