@@ -5,7 +5,7 @@ go 1.24.4
 require github.com/beego/beego/v2 v2.3.8
 
 require (
-	github.com/Mellolo/common v1.0.0
+	github.com/Mellolo/common v1.1.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/google/uuid v1.6.0

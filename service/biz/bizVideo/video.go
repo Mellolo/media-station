@@ -214,7 +214,7 @@ func (impl *VideoBizServiceImpl) CreateVideo(ctx contextDTO.ContextDTO, createDT
 	if fn, ok := formatInfo["format_name"].(string); ok {
 		formatName = fn
 	}
-	originalExt := GetExtensionFromFormat(formatName)
+	originalExt := videoUtil.GetExtensionFromFormat(formatName)
 
 	// 4. 生成唯一文件名并保存到 MinIO（保留原始扩展名）
 	filename := impl.idGenerator.GenerateId(videoIdGenerateKey)
@@ -316,25 +316,7 @@ func (impl *VideoBizServiceImpl) PlayVideo(ctx contextDTO.ContextDTO, id int64, 
 	// MinIO 可能返回 application/octet-stream，根据文件扩展名设置正确的 Content-Type
 	contentType := do.Header.Get("Content-Type")
 	if contentType == "" || contentType == "application/octet-stream" {
-		lowerUrl := strings.ToLower(video.VideoUrl)
-		switch {
-		case strings.HasSuffix(lowerUrl, ".mp4") || strings.HasSuffix(lowerUrl, ".m4v"):
-			do.Header.Set("Content-Type", "video/mp4")
-		case strings.HasSuffix(lowerUrl, ".webm"):
-			do.Header.Set("Content-Type", "video/webm")
-		case strings.HasSuffix(lowerUrl, ".mkv"):
-			do.Header.Set("Content-Type", "video/x-matroska")
-		case strings.HasSuffix(lowerUrl, ".avi"):
-			do.Header.Set("Content-Type", "video/x-msvideo")
-		case strings.HasSuffix(lowerUrl, ".mov"):
-			do.Header.Set("Content-Type", "video/quicktime")
-		case strings.HasSuffix(lowerUrl, ".flv"):
-			do.Header.Set("Content-Type", "video/x-flv")
-		case strings.HasSuffix(lowerUrl, ".wmv"):
-			do.Header.Set("Content-Type", "video/x-ms-wmv")
-		case strings.HasSuffix(lowerUrl, ".ts"):
-			do.Header.Set("Content-Type", "video/mp2t")
-		}
+		do.Header.Set("Content-Type", videoUtil.GetContentTypeByExtension(video.VideoUrl))
 	}
 
 	return videoDTO.VideoFileDTO{

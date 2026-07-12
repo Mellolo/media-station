@@ -151,3 +151,38 @@ func GetFileExtension(filePath string) string {
 	}
 	return ""
 }
+
+// GetContentTypeByExtension 根据文件扩展名获取 MIME Content-Type
+func GetContentTypeByExtension(filePath string) string {
+	lower := strings.ToLower(filePath)
+	switch {
+	case strings.HasSuffix(lower, ".mp4") || strings.HasSuffix(lower, ".m4v"):
+		return "video/mp4"
+	case strings.HasSuffix(lower, ".webm"):
+		return "video/webm"
+	case strings.HasSuffix(lower, ".mkv"):
+		return "video/x-matroska"
+	case strings.HasSuffix(lower, ".avi"):
+		return "video/x-msvideo"
+	case strings.HasSuffix(lower, ".mov"):
+		return "video/quicktime"
+	case strings.HasSuffix(lower, ".flv"):
+		return "video/x-flv"
+	case strings.HasSuffix(lower, ".wmv"):
+		return "video/x-ms-wmv"
+	case strings.HasSuffix(lower, ".ts"):
+		return "video/mp2t"
+	case strings.HasSuffix(lower, ".ogv") || strings.HasSuffix(lower, ".ogg"):
+		return "video/ogg"
+	case strings.HasSuffix(lower, ".mpg") || strings.HasSuffix(lower, ".mpeg"):
+		return "video/mpeg"
+	case strings.HasSuffix(lower, ".3gp"):
+		return "video/3gpp"
+	case strings.HasSuffix(lower, ".rmvb") || strings.HasSuffix(lower, ".rm"):
+		return "application/vnd.rn-realmedia"
+	case strings.HasSuffix(lower, ".asf"):
+		return "video/x-ms-asf"
+	default:
+		return "video/mp4"
+	}
+}

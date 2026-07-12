@@ -5,14 +5,16 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/Mellolo/common/errors"
+	"github.com/Mellolo/common/utils/videoUtil"
 	"github.com/Mellolo/media-station/models/dto/contextDTO"
-	"github.com/Mellolo/media-station/utils/videoUtil"
 	"github.com/beego/beego/v2/core/logs"
+	"github.com/google/uuid"
 )
 
 // HLSSessionManager HLS 会话管理器
@@ -27,6 +29,7 @@ type HLSSession struct {
 	Directory string
 	Process   *os.Process
 	CreatedAt time.Time
+	VideoID   int64
 }
 
 // 全局 HLS 会话管理器
@@ -35,67 +38,99 @@ var hlsSessionManager = &HLSSessionManager{
 }
 
 // StreamVideoToHLS 流式转码入口
+// 判断视频格式是否需要转码：
+// - 浏览器原生格式(mp4/webm/ogv) → 直接返回原生播放地址
+// - 非原生格式(mkv/avi/rmvb等) → 启动 FFmpeg 实时转码为 HLS
 func (impl *VideoBizServiceImpl) StreamVideoToHLS(ctx contextDTO.ContextDTO, id int64) map[string]string {
 	video, err := impl.videoMapper.SelectById(id)
 	if err != nil {
 		panic(errors.WrapError(err, fmt.Sprintf("video [%d] doesn't exist", id)))
 	}
 
-	// 判断是否需要转码（从 video_url 提取扩展名）
 	ext := videoUtil.GetFileExtension(video.VideoUrl)
+
+	// 浏览器原生支持的格式，直接播放
 	if !videoUtil.NeedsTranscoding(ext) {
-		// 浏览器原生支持，直接返回原始文件地址
+		contentType := videoUtil.GetContentTypeByExtension(video.VideoUrl)
 		return map[string]string{
-			"type": "native",
-			"url":  fmt.Sprintf("/api/video/play/%d", id),
+			"type":         "native",
+			"url":          fmt.Sprintf("/api/video/play/%d", id),
+			"content_type": contentType,
 		}
 	}
 
-	// 需要转码，创建唯一会话ID
-	sessionID := fmt.Sprintf("%d_%d", id, time.Now().UnixNano())
-	hlsDir := fmt.Sprintf("/tmp/hls_streaming/%s", sessionID)
+	// 需要转码：启动 FFmpeg 实时转码为 HLS
+	logs.Info(fmt.Sprintf("视频 [%d] 格式 [%s] 需要转码为 HLS", id, ext))
 
-	// 创建临时目录
+	// 检查是否已有活跃的 HLS 会话（避免重复转码）
+	hlsSessionManager.mutex.RLock()
+	for _, session := range hlsSessionManager.sessions {
+		if session.VideoID == id {
+			hlsSessionManager.mutex.RUnlock()
+			logs.Info(fmt.Sprintf("视频 [%d] 已有活跃 HLS 会话: %s", id, session.SessionID))
+			return map[string]string{
+				"type":         "hls",
+				"playlist_url": fmt.Sprintf("/api/video/hls/%s/playlist.m3u8", session.SessionID),
+				"content_type": "application/x-mpegURL",
+			}
+		}
+	}
+	hlsSessionManager.mutex.RUnlock()
+
+	// 生成会话 ID
+	sessionID := uuid.New().String()
+
+	// 创建 HLS 输出目录
+	hlsDir := filepath.Join("/tmp/hls_streaming", sessionID)
 	if err := os.MkdirAll(hlsDir, 0755); err != nil {
-		panic(errors.WrapError(err, "create hls directory failed"))
+		panic(errors.WrapError(err, "创建 HLS 输出目录失败"))
 	}
 
-	// 获取原始文件的预签名 URL
+	// 获取 MinIO 预签名 URL 作为 FFmpeg 输入
 	inputURL := impl.videoStorage.GetStreamURL(bucketVideo, video.VideoUrl, 30*time.Minute)
 
-	playlistPath := fmt.Sprintf("%s/playlist.m3u8", hlsDir)
-	segmentPattern := fmt.Sprintf("%s/segment_%03d.ts", hlsDir)
+	// 构建 FFmpeg 命令
+	outputPattern := filepath.Join(hlsDir, "segment_%03d.ts")
+	playlistPath := filepath.Join(hlsDir, "playlist.m3u8")
 
-	// 启动 FFmpeg 后台转码
 	cmd := exec.Command("ffmpeg",
 		"-i", inputURL,
-		"-c:v", "libx264",
-		"-preset", "ultrafast", // 最快编码速度，降低延迟
-		"-crf", "23",
-		"-c:a", "aac",
-		"-b:a", "128k",
-		"-hls_time", "2", // 2秒片段（更快起播）
+		"-c:v", "libx264", // 视频编码为 H.264
+		"-c:a", "aac", // 音频编码为 AAC
+		"-preset", "veryfast", // 编码速度优先
+		"-tune", "zerolatency", // 低延迟优化
+		"-start_number", "0",
+		"-hls_time", "6", // 每个片段 6 秒
 		"-hls_list_size", "0", // 保留所有片段
-		"-hls_segment_filename", segmentPattern,
-		"-pix_fmt", "yuv420p",
-		playlistPath)
+		"-hls_segment_filename", outputPattern,
+		"-f", "hls",
+		playlistPath,
+	)
 
-	// 启动进程（异步，不等待完成）
+	// 启动 FFmpeg 进程
 	if err := cmd.Start(); err != nil {
 		os.RemoveAll(hlsDir)
-		panic(errors.WrapError(err, "start ffmpeg failed"))
+		panic(errors.WrapError(err, "启动 FFmpeg 转码失败"))
 	}
 
-	// 注册会话（用于后续清理）
-	hlsSessionManager.Register(sessionID, hlsDir, cmd.Process)
+	logs.Info(fmt.Sprintf("FFmpeg 转码已启动: video=%d, session=%s, pid=%d", id, sessionID, cmd.Process.Pid))
 
-	logs.Info(fmt.Sprintf("HLS转码已启动: session=%s, video=%d", sessionID, id))
+	// 注册会话（10 分钟后自动清理）
+	hlsSessionManager.Register(sessionID, hlsDir, cmd.Process, id)
 
-	// 立即返回 playlist URL（前端可以开始请求）
+	// 启动后台等待 FFmpeg 进程结束
+	go func() {
+		if err := cmd.Wait(); err != nil {
+			logs.Warn(fmt.Sprintf("FFmpeg 转码进程结束: session=%s, err=%v", sessionID, err))
+		} else {
+			logs.Info(fmt.Sprintf("FFmpeg 转码完成: session=%s", sessionID))
+		}
+	}()
+
 	return map[string]string{
 		"type":         "hls",
 		"playlist_url": fmt.Sprintf("/api/video/hls/%s/playlist.m3u8", sessionID),
-		"session_id":   sessionID,
+		"content_type": "application/x-mpegURL",
 	}
 }
 
@@ -123,7 +158,7 @@ func (impl *VideoBizServiceImpl) ServeHLSSegment(sessionID string, filename stri
 }
 
 // Register 注册 HLS 会话
-func (m *HLSSessionManager) Register(sessionID, dir string, process *os.Process) {
+func (m *HLSSessionManager) Register(sessionID, dir string, process *os.Process, videoID int64) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -132,11 +167,12 @@ func (m *HLSSessionManager) Register(sessionID, dir string, process *os.Process)
 		Directory: dir,
 		Process:   process,
 		CreatedAt: time.Now(),
+		VideoID:   videoID,
 	}
 
-	// 启动清理协程（10分钟后清理）
+	// 启动清理协程（30 分钟后清理，给转码足够时间）
 	go func() {
-		time.Sleep(10 * time.Minute)
+		time.Sleep(30 * time.Minute)
 		m.Cleanup(sessionID)
 	}()
 }
@@ -184,64 +220,4 @@ func ServeHLSFile(filePath string, w http.ResponseWriter, r *http.Request) {
 
 	// 提供静态文件服务
 	http.ServeFile(w, r, filePath)
-}
-
-// GetFileExtension 从文件路径提取扩展名
-func GetFileExtension(filePath string) string {
-	parts := strings.Split(filePath, ".")
-	if len(parts) > 1 {
-		return "." + parts[len(parts)-1]
-	}
-	return ""
-}
-
-// NeedsTranscoding 判断视频格式是否需要转码
-func NeedsTranscoding(fileExtension string) bool {
-	// 浏览器原生支持的格式
-	supportedExts := map[string]bool{
-		".mp4":  true, // H.264/AAC
-		".webm": true, // VP8/VP9/Vorbis
-		".ogv":  true, // Theora/Vorbis
-	}
-
-	ext := strings.ToLower(fileExtension)
-	// 确保扩展名以 . 开头
-	if !strings.HasPrefix(ext, ".") {
-		ext = "." + ext
-	}
-
-	return !supportedExts[ext]
-}
-
-// GetExtensionFromFormat 从 ffprobe 格式名映射到文件扩展名
-func GetExtensionFromFormat(formatName string) string {
-	// 处理可能包含多个格式名的情况（如 "mov,mp4,m4a"）
-	formatParts := strings.Split(formatName, ",")
-	if len(formatParts) > 0 {
-		formatName = formatParts[0]
-	}
-
-	formatMap := map[string]string{
-		"matroska":  "mkv",
-		"avi":       "avi",
-		"mov":       "mp4",
-		"mp4":       "mp4",
-		"flv":       "flv",
-		"rm":        "rmvb",
-		"realmedia": "rmvb",
-		"mpeg":      "mpg",
-		"mpegts":    "ts",
-		"webm":      "webm",
-		"asf":       "wmv",
-		"wmv":       "wmv",
-		"quicktime": "mov",
-		"ogg":       "ogv",
-	}
-
-	if ext, ok := formatMap[formatName]; ok {
-		return ext
-	}
-
-	// 默认返回 mp4
-	return "mp4"
 }
